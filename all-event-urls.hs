@@ -18,14 +18,14 @@ scheduleForDay day = "http://schedule.sxsw.com/?conference=music&day=" ++ (show 
 makeAbsoluteURLFrom u = "http://schedule.sxsw.com" ++ u
 
 theHref = fromJust . findAttr hrefAttr
-  where hrefAttr = QName "href" Nothing Nothing
+  where hrefAttr = unqual "href"
         
 findLinks = findElements linkEl
   where linkEl = QName "a" ns Nothing
 
 onlyEvents = filterElements byEventEl
   where byEventEl x = (findAttr classAttr x) == Just "link_itemMusic"
-        classAttr = QName "class" Nothing Nothing
+        classAttr = unqual "class"
 
 unsafeCurlGetString url = curlGetString url [] >>= return . snd
 
