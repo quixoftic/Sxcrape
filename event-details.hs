@@ -32,47 +32,33 @@ theHref = findAttr hrefAttr
 maybeStrContent :: Maybe Element -> Maybe String
 maybeStrContent = fmap strContent
 
-theArtist = maybeStrContent . findClass "event_name"
-theGenre =  maybeStrContent . findClass "event_sub_category"
-theOrigin = maybeStrContent . findClass "event_citystate"
-theArtistImg = theSrc <=< findImg <=< findClass "video_embed"
-theDescription = maybeStrContent . findClass "main_content_desc"
-theDate = maybeStrContent . findClass "date"
-theTime = maybeStrContent . findClass "time"
-theVenue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
-theAddress = maybeStrContent . findClass "address"  
-theArtistHomepage = theHref <=< findLink <=< findClass "web"
+artist = maybeStrContent . findClass "event_name"
+genre =  maybeStrContent . findClass "event_sub_category"
+origin = maybeStrContent . findClass "event_citystate"
+artistImg = theSrc <=< findImg <=< findClass "video_embed"
+description = maybeStrContent . findClass "main_content_desc"
+date = maybeStrContent . findClass "date"
+time = maybeStrContent . findClass "time"
+venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
+address = maybeStrContent . findClass "address"
+homepage = theHref <=< findLink <=< findClass "web"
 
-theAges = maybeStrContent . secondEl . findClasses "venue"
+ages = maybeStrContent . secondEl . findClasses "venue"
   where secondEl (_:x:xs) = Just x
         secondEl _ = Nothing
   
-eventDetails xml =
-  let artist = theArtist xml
-      genre = theGenre xml
-      origin = theOrigin xml
-      img = theArtistImg xml
-      description = theDescription xml
-      date = theDate xml
-      time = theTime xml
-      venue = theVenue xml
-      ages = theAges xml
-      addr = theAddress xml
-      homepage = theArtistHomepage xml
-  in Map.fromList [
-    ("artist", artist),
-    ("genre", genre),
-    ("origin", origin),
-    ("img", img),
-    ("date", date),
-    ("time", time),
-    ("venue", venue),
-    ("ages", ages),
-    ("addr", addr),
-    ("description", description),
-    ("homepage", homepage)
-    ]
-  
+eventDetails xml = Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", artist),
+                                                                    ("genre", genre),
+                                                                    ("origin", origin),
+                                                                    ("artistImg", artistImg),
+                                                                    ("date", date),
+                                                                    ("time", time),
+                                                                    ("venue", venue),
+                                                                    ("ages", ages),
+                                                                    ("address", address),
+                                                                    ("description", description),
+                                                                    ("homepage", homepage)]
+
 main = do
   xml <- getEventDoc "http://schedule.sxsw.com/events/event_MS14879"
   putStr $ Map.showTree $ eventDetails $ fromJust xml
