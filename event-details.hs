@@ -46,14 +46,21 @@ description = maybeStrContent . findClass "main_content_desc"
 date = maybeStrContent . findClass "date"
 time = maybeStrContent . findClass "time"
 
-utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%m %p %Z" :: String -> Maybe UTCTime
+timeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
+utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
 
--- Note: all SXSW 2011 events happen in 2011 in the CDT timezone.
+-- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
+-- times given after 11:59 p.m., but before, let's say, 6 a.m.,
+-- technically occur on the next day; e.g., if the SXSW schedule says
+-- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 start xml = do
   t <- time xml
   d <- date xml
   utct <- utcTime $ d ++ " 2011 " ++ t ++ " CDT"
-  return $ show utct
+  tod <- timeOfDay t
+  if ((tod >= TimeOfDay 0 0 0) && (tod < TimeOfDay 6 0 0)) 
+    then return $ show (addUTCTime (60 * 60 * 24) utct)
+    else return $ show utct
 
 venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
 address = maybeStrContent . findClass "address"
