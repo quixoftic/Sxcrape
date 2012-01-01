@@ -37,13 +37,13 @@ artist = maybeStrContent . findClass "event_name"
 genre =  maybeStrContent . findClass "event_sub_category"
 -- origin often has weird formatting.
 origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "event_citystate"
-artistImg = theSrc <=< findImg <=< findClass "video_embed"
+imgURL = theSrc <=< findImg <=< findClass "video_embed"
 description = maybeStrContent . findClass "main_content_desc"
 date = maybeStrContent . findClass "date"
 time = maybeStrContent . findClass "time"
 venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
 address = maybeStrContent . findClass "address"
-homepage = theHref <=< findLink <=< findClass "web"
+artistURL = theHref <=< findLink <=< findClass "web"
 
 ages = maybeStrContent . secondEl . findClasses "venue"
   where secondEl (_:x:xs) = Just x
@@ -52,14 +52,14 @@ ages = maybeStrContent . secondEl . findClasses "venue"
 eventDetails xml = Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", artist),
                                                                     ("genre", genre),
                                                                     ("origin", origin),
-                                                                    ("artistImg", artistImg),
+                                                                    ("imgURL", imgURL),
                                                                     ("date", date),
                                                                     ("time", time),
                                                                     ("venue", venue),
                                                                     ("ages", ages),
                                                                     ("address", address),
                                                                     ("description", description),
-                                                                    ("homepage", homepage)]
+                                                                    ("artistURL", artistURL)]
 
 main = do
   xml <- getEventDoc "http://schedule.sxsw.com/events/event_MS14879"
