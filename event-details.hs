@@ -2,6 +2,7 @@ import Network.Curl
 import Text.XML.Light
 import Data.Maybe
 import Control.Monad
+import Data.String.Utils as String
 import qualified Data.Map as Map
 
 -- namespace used by SXSW schedule documents
@@ -30,11 +31,12 @@ theHref = findAttr hrefAttr
   where hrefAttr = unqual "href"
     
 maybeStrContent :: Maybe Element -> Maybe String
-maybeStrContent = fmap strContent
+maybeStrContent = fmap strip . fmap strContent
 
 artist = maybeStrContent . findClass "event_name"
 genre =  maybeStrContent . findClass "event_sub_category"
-origin = maybeStrContent . findClass "event_citystate"
+-- origin often has weird formatting.
+origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "event_citystate"
 artistImg = theSrc <=< findImg <=< findClass "video_embed"
 description = maybeStrContent . findClass "main_content_desc"
 date = maybeStrContent . findClass "date"
