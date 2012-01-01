@@ -4,6 +4,8 @@ import Data.Maybe
 import Control.Monad
 import Data.String.Utils as String
 import qualified Data.Map as Map
+import Data.Time as Time
+import Locale as Locale
 
 -- namespace used by SXSW schedule documents
 ns = Just "http://www.w3.org/1999/xhtml"
@@ -35,12 +37,21 @@ maybeStrContent = fmap strip . fmap strContent
 
 artist = maybeStrContent . findClass "event_name"
 genre =  maybeStrContent . findClass "event_sub_category"
+
 -- origin often has weird formatting.
 origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "event_citystate"
+
 imgURL = theSrc <=< findImg <=< findClass "video_embed"
 description = maybeStrContent . findClass "main_content_desc"
 date = maybeStrContent . findClass "date"
 time = maybeStrContent . findClass "time"
+
+utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%m %p %Z" :: String -> Maybe UTCTime
+
+-- start returns the event start time in UTC, as a Maybe String. Note:
+-- all SXSW 2011 events happen in 2011 in the CDT timezone.
+start xml = fmap show $ utcTime <=< liftM2 (++) (date xml) $ liftM2 (++) (Just " 2011") $ liftM2 (++) (Just " ") $ liftM2 (++) (time xml) (Just " CDT")
+
 venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
 address = maybeStrContent . findClass "address"
 artistURL = theHref <=< findLink <=< findClass "web"
@@ -53,8 +64,7 @@ eventDetails xml = Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", a
                                                                     ("genre", genre),
                                                                     ("origin", origin),
                                                                     ("imgURL", imgURL),
-                                                                    ("date", date),
-                                                                    ("time", time),
+                                                                    ("start", start),
                                                                     ("venue", venue),
                                                                     ("ages", ages),
                                                                     ("address", address),
