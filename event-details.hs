@@ -43,8 +43,8 @@ origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "e
 
 imgURL = theSrc <=< findImg <=< findClass "video_embed"
 description = maybeStrContent . findClass "main_content_desc"
-date = maybeStrContent . findClass "date"
-time = maybeStrContent . findClass "time"
+cdtDateStr = maybeStrContent . findClass "date"
+cdtTimeStr = maybeStrContent . findClass "time"
 
 timeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
 utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
@@ -54,11 +54,11 @@ utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> May
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 start xml = do
-  t <- time xml
-  d <- date xml
+  t <- cdtTimeStr xml
+  d <- cdtDateStr xml
   utct <- utcTime $ d ++ " 2011 " ++ t ++ " CDT"
-  tod <- timeOfDay t
-  if ((tod >= TimeOfDay 0 0 0) && (tod < TimeOfDay 6 0 0)) 
+  cdtTimeOfDay <- timeOfDay t
+  if ((cdtTimeOfDay >= TimeOfDay 0 0 0) && (cdtTimeOfDay < TimeOfDay 6 0 0)) 
     then return $ show (addUTCTime (60 * 60 * 24) utct)
     else return $ show utct
 
