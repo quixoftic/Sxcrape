@@ -41,8 +41,10 @@ genre =  maybeStrContent . findClass "event_sub_category"
 -- origin often has weird formatting.
 origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "event_citystate"
 
+-- Strip out the description line formatting.
+description = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
+
 imgURL = theSrc <=< findImg <=< findClass "video_embed"
-description = maybeStrContent . findClass "main_content_desc"
 cdtDateStr = maybeStrContent . findClass "date"
 cdtTimeStr = maybeStrContent . findClass "time"
 
