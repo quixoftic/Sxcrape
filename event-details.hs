@@ -45,24 +45,26 @@ origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "e
 description = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
 
 imgURL = theSrc <=< findImg <=< findClass "video_embed"
-cdtDateStr = maybeStrContent . findClass "date"
-cdtTimeStr = maybeStrContent . findClass "time"
-
-timeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
-utcTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
+dateStr = maybeStrContent . findClass "date"
+timeStr = maybeStrContent . findClass "time"
 
 -- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 start xml = do
-  t <- cdtTimeStr xml
-  d <- cdtDateStr xml
-  utct <- utcTime $ d ++ " 2011 " ++ t ++ " CDT"
-  cdtTimeOfDay <- timeOfDay t
-  if ((cdtTimeOfDay >= TimeOfDay 0 0 0) && (cdtTimeOfDay < TimeOfDay 6 0 0)) 
-    then return $ show (addUTCTime (60 * 60 * 24) utct)
-    else return $ show utct
+  cdtTime <- timeStr xml
+  cdtDate <- dateStr xml
+  cdtTimeOfDay <- toTimeOfDay cdtTime
+  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2011 " ++ cdtTime ++ " CDT"
+  return $ show utct
+  where
+    offset tod
+      | tod >= midnight && tod < morning = 60 * 60 * 24
+      | otherwise                        = 0
+    morning = TimeOfDay 6 0 0
+    toUTCTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
+    toTimeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
 
 venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
 address = maybeStrContent . findClass "address"
