@@ -74,7 +74,8 @@ ages = maybeStrContent . secondEl . findClasses "venue"
   where secondEl (_:x:xs) = Just x
         secondEl _ = Nothing
   
-eventDetails xml = Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", artist),
+eventDetails xml = Map.mapMaybe id $
+                   Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", artist),
                                                                     ("genre", genre),
                                                                     ("origin", origin),
                                                                     ("imgURL", imgURL),
