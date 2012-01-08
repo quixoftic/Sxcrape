@@ -39,7 +39,7 @@ artist = maybeStrContent . findClass "event_name"
 genre =  maybeStrContent . findClass "event_sub_category"
 
 -- origin often has weird formatting.
-origin = fmap (String.join ", ") . fmap splitWs . maybeStrContent . findClass "event_citystate"
+origin = fmap (String.join ", ") . fmap words . maybeStrContent . findClass "event_citystate"
 
 -- Strip out the description line formatting.
 description = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
