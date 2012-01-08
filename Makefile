@@ -1,7 +1,10 @@
 all: all-event-urls event-details
 
-all-event-urls: all-event-urls.hs
-	ghc --make -optl"-Wl,-read_only_relocs,suppress" $<
+all-event-urls: EventURLs.hs
+	ghc --make -optl"-Wl,-read_only_relocs,suppress" -o $@ $<
 
-event-details: event-details.hs
-	ghc --make -optl"-Wl,-read_only_relocs,suppress" $<
+event-details: EventDetails.hs
+	ghc --make -optl"-Wl,-read_only_relocs,suppress" -o $@ $<
+
+clean:
+	rm -f  *.hi *.o event-details all-event-urls
