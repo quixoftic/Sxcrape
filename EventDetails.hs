@@ -1,4 +1,5 @@
-import Network.Curl
+module EventDetails (eventDetails) where
+
 import Text.XML.Light
 import Data.Maybe
 import Control.Monad
@@ -9,9 +10,6 @@ import Locale as Locale
 
 -- namespace used by SXSW schedule documents
 ns = Just "http://www.w3.org/1999/xhtml"
-
--- Parse event XML documents
-getEventDoc url = fmap parseXMLDoc $ readFile "casiokids.html"
 
 -- Extract event details
 byClass className el = (findAttr classAttr el) == Just className
@@ -85,9 +83,3 @@ eventDetails xml = Map.mapMaybe id $
                                                                     ("address", address),
                                                                     ("description", description),
                                                                     ("artistURL", artistURL)]
-
-main = do
-  xml <- getEventDoc "http://schedule.sxsw.com/events/event_MS14879"
-  putStr $ Map.showTree $ eventDetails $ fromJust xml
-
-unsafeCurlGetString url = curlGetString url [] >>= return . snd

@@ -1,9 +1,8 @@
+module EventURLs (eventURLsForDay) where
+
 import Network.Curl
 import Text.XML.Light
 import Data.Maybe
-import System.IO
-import Data.Monoid
-import Control.Monad
 
 -- namespace used by SXSW schedule documents
 ns = Just "http://www.w3.org/1999/xhtml"
@@ -28,7 +27,3 @@ onlyEvents = filterElements byEventEl
         classAttr = unqual "class"
 
 unsafeCurlGetString url = curlGetString url [] >>= return . snd
-
-main = do
-  eventURLs <- mapM eventURLsForDay [15, 16, 17, 18, 19, 20]
-  mapM_ putStrLn $ mconcat eventURLs
