@@ -12,6 +12,8 @@ eventURLsForDay day = do
   let eventEls = findClasses "link_itemMusic" . fromMaybe blank_element $ parseXMLDoc html
   return $ map (makeAbsoluteURLFrom . fromJust . theHref) eventEls
 
+scheduleForDay :: Num a => a -> String
 scheduleForDay day = "http://schedule.sxsw.com/?conference=music&day=" ++ (show day) ++ "&category=Showcase#"
 
+makeAbsoluteURLFrom :: String -> String
 makeAbsoluteURLFrom u = "http://schedule.sxsw.com" ++ u
