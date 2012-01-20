@@ -13,7 +13,7 @@ eventURLsForDay day = do
   return $ map (makeAbsoluteURLFrom . fromJust . theHref) eventEls
 
 scheduleURLForDay :: Num a => a -> String
-scheduleURLForDay day = "http://schedule.sxsw.com/?conference=music&day=" ++ (show day) ++ "&category=Showcase#"
+scheduleURLForDay day = "http://schedule.sxsw.com/2011/?conference=music&day=" ++ (show day) ++ "&category=Showcase#"
 
 makeAbsoluteURLFrom :: String -> String
-makeAbsoluteURLFrom u = "http://schedule.sxsw.com" ++ u
+makeAbsoluteURLFrom u = "http://schedule.sxsw.com/2011" ++ u

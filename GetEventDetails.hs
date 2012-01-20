@@ -4,7 +4,7 @@ import Text.XML.Light
 import qualified Data.Map as Map
 import Data.Maybe
 
-eventURL = "http://schedule.sxsw.com/events/event_MS14879"
+eventURL = "http://schedule.sxsw.com/2011/events/event_MS14879"
 
 main :: IO ()
 main = do
