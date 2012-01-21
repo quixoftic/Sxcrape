@@ -1,4 +1,4 @@
 *.o
 *.hi
 all-event-urls
-event-details
+get-event
