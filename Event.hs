@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Event ( Event
              , parseEvent
              ) where
@@ -9,6 +11,7 @@ import Data.Time as Time
 import Locale as Locale
 import Text.XML.Light
 import ParserUtils
+import Data.Data (Data, Typeable)
 
 -- It's entirely possible that some events will be missing one or more
 -- of these details. Those that are non-essential (e.g., artistURL)
@@ -25,7 +28,7 @@ data Event = Event { artist :: String
                    , artistURL :: String
                    , origin :: String
                    , imgURL :: String
-                   } deriving (Show)
+                   } deriving (Show, Data, Typeable)
                      
 -- Might need another variant of parseEvent that returns an Either
 -- String Event, or throws an exception, to provide details about why
