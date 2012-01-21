@@ -1,43 +1,76 @@
-module Event (eventDetails) where
+module Event ( Event
+             , parseEvent
+             ) where
 
 import Data.Maybe
 import Control.Monad
 import Data.String.Utils as String
-import qualified Data.Map as Map
 import Data.Time as Time
 import Locale as Locale
 import Text.XML.Light
 import ParserUtils
 
-eventDetails :: Element -> Map.Map String String
-eventDetails xml = Map.mapMaybe id $
-                   Map.fromList $ map (\(name,f) -> (name, f xml)) [("artist", artist),
-                                                                    ("genre", genre),
-                                                                    ("origin", origin),
-                                                                    ("imgURL", imgURL),
-                                                                    ("start", start),
-                                                                    ("venue", venue),
-                                                                    ("ages", ages),
-                                                                    ("address", address),
-                                                                    ("description", description),
-                                                                    ("artistURL", artistURL)]
+-- It's entirely possible that some events will be missing one or more
+-- of these details. Those that are non-essential (e.g., artistURL)
+-- might need to be changed to type Maybe String. Let's see how it
+-- goes.
 
+data Event = Event { artist :: String
+                   , venue :: String
+                   , address :: String
+                   , start :: String
+                   , ages :: String
+                   , genre :: String
+                   , description :: String
+                   , artistURL :: String
+                   , origin :: String
+                   , imgURL :: String
+                   } deriving (Show)
+                     
+-- Might need another variant of parseEvent that returns an Either
+-- String Event, or throws an exception, to provide details about why
+-- a parse failed. For now, this will do.
+
+parseEvent :: Element -> Maybe Event
+parseEvent xml = do
+  theArtist <- parseArtist xml
+  theVenue <- parseVenue xml
+  theAddress <- parseAddress xml
+  theStart <- parseStart xml
+  theAges <- parseAges xml
+  theGenre <- parseGenre xml
+  theDescription <- parseDescription xml
+  theArtistURL <- parseArtistURL xml
+  theOrigin <- parseOrigin xml
+  theImgURL <- parseImgURL xml
+  return Event { artist = theArtist
+               , venue = theVenue
+               , address = theAddress
+               , start = theStart
+               , ages = theAges
+               , genre = theGenre
+               , description = theDescription
+               , artistURL = theArtistURL
+               , origin = theOrigin
+               , imgURL = theImgURL
+               }
+                 
 -- origin often has weird formatting.
-origin :: Element -> Maybe String
-origin = fmap (String.join ", " . words) . maybeStrContent . findClass "event_citystate"
+parseOrigin :: Element -> Maybe String
+parseOrigin = fmap (String.join ", " . words) . maybeStrContent . findClass "event_citystate"
 
 -- Strip out the description line formatting.
-description :: Element -> Maybe String
-description = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
+parseDescription :: Element -> Maybe String
+parseDescription = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
 
-artist :: Element -> Maybe String
-artist = maybeStrContent . findClass "event_name"
+parseArtist :: Element -> Maybe String
+parseArtist = maybeStrContent . findClass "event_name"
 
-genre :: Element -> Maybe String
-genre =  maybeStrContent . findClass "event_sub_category"
+parseGenre :: Element -> Maybe String
+parseGenre =  maybeStrContent . findClass "event_sub_category"
 
-imgURL :: Element -> Maybe String
-imgURL = theSrc <=< findImg <=< findClass "video_embed"
+parseImgURL :: Element -> Maybe String
+parseImgURL = theSrc <=< findImg <=< findClass "video_embed"
 
 dateStr :: Element -> Maybe String
 dateStr = maybeStrContent . findClass "date"
@@ -45,17 +78,17 @@ dateStr = maybeStrContent . findClass "date"
 timeStr :: Element -> Maybe String
 timeStr = maybeStrContent . findClass "time"
 
-venue :: Element -> Maybe String
-venue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
+parseVenue :: Element -> Maybe String
+parseVenue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
 
-address :: Element -> Maybe String
-address = maybeStrContent . findClass "address"
+parseAddress :: Element -> Maybe String
+parseAddress = maybeStrContent . findClass "address"
 
-artistURL :: Element -> Maybe String
-artistURL = theHref <=< findLink <=< findClass "web"
+parseArtistURL :: Element -> Maybe String
+parseArtistURL = theHref <=< findLink <=< findClass "web"
 
-ages :: Element -> Maybe String
-ages = maybeStrContent . secondEl . findClasses "venue"
+parseAges :: Element -> Maybe String
+parseAges = maybeStrContent . secondEl . findClasses "venue"
   where secondEl (_:x:xs) = Just x
         secondEl _ = Nothing
   
@@ -63,8 +96,8 @@ ages = maybeStrContent . secondEl . findClasses "venue"
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
-start :: Element -> Maybe String        
-start xml = do
+parseStart :: Element -> Maybe String        
+parseStart xml = do
   cdtTime <- timeStr xml
   cdtDate <- dateStr xml
   cdtTimeOfDay <- toTimeOfDay cdtTime
