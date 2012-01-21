@@ -21,7 +21,7 @@ import Data.Data (Data, Typeable)
 data Event = Event { artist :: String
                    , venue :: String
                    , address :: String
-                   , start :: String
+                   , start :: UTCTime
                    , ages :: String
                    , genre :: String
                    , description :: String
@@ -99,13 +99,13 @@ parseAges = maybeStrContent . secondEl . findClasses "venue"
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
-parseStart :: Element -> Maybe String        
+parseStart :: Element -> Maybe UTCTime
 parseStart xml = do
   cdtTime <- timeStr xml
   cdtDate <- dateStr xml
   cdtTimeOfDay <- toTimeOfDay cdtTime
   utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2011 " ++ cdtTime ++ " CDT"
-  return $ show utct
+  return utct
   where
     offset tod
       | tod >= midnight && tod < morning = 60 * 60 * 24
