@@ -1,4 +1,4 @@
-import EventDetails
+import Event
 import Network.Curl
 import Text.XML.Light
 import qualified Data.Map as Map

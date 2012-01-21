@@ -1,4 +1,4 @@
-module EventDetails (eventDetails) where
+module Event (eventDetails) where
 
 import Data.Maybe
 import Control.Monad
