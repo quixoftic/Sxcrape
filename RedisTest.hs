@@ -14,17 +14,41 @@ instance BS T.Text where
 (<:>) :: T.Text -> T.Text -> T.Text
 s1 <:> s2 = T.concat [s1, ":", s2]
 
-eventIDPrefix :: T.Text
-eventIDPrefix = "event.id"
+eventIDKeyPrefix :: T.Text
+eventIDKeyPrefix = "event.id"
 
 nextEventIDKey :: T.Text
 nextEventIDKey = "next.event.id"
 
 eventIDKey :: T.Text -> T.Text
-eventIDKey nativeEventID = eventIDPrefix <:> nativeEventID
+eventIDKey nativeEventID = eventIDKeyPrefix <:> nativeEventID
 
 getOrSetEventID :: T.Text -> Redis -> IO (Int)
 getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEventIDKey r
+
+artistIDKeyPrefix :: T.Text
+artistIDKeyPrefix = "artist.id"
+
+nextArtistIDKey :: T.Text
+nextArtistIDKey = "next.artist.id"
+
+artistIDKey :: T.Text -> T.Text
+artistIDKey nativeArtistID = artistIDKeyPrefix <:> nativeArtistID
+
+getOrSetArtistID :: T.Text -> Redis -> IO (Int)
+getOrSetArtistID nativeArtistID r = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey r
+
+venueIDKeyPrefix :: T.Text
+venueIDKeyPrefix = "venue.id"
+
+nextVenueIDKey :: T.Text
+nextVenueIDKey = "next.venue.id"
+
+venueIDKey :: T.Text -> T.Text
+venueIDKey nativeVenueID = venueIDKeyPrefix <:> nativeVenueID
+
+getOrSetVenueID :: T.Text -> Redis -> IO (Int)
+getOrSetVenueID nativeVenueID r = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey r
 
 -- Return an ID for idKey if it exists, otherwise make a new one. This
 -- function is race-free. If two processes call it at the same time,
