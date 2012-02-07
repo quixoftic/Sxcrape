@@ -28,12 +28,12 @@ class NextIDKey a where
 -- prevents Haskell from automatically converting T.Text arguments to
 -- IDKey or NextIDKey when applying getOrSetID.
 --
-newtype Key = Key { getKey :: T.Text } deriving (Eq, Show)
+newtype Key a = Key { getKey :: T.Text } deriving (Eq, Show)
 
-instance IDKey Key where
+instance IDKey (Key a) where
   idKeyToText = getKey
 
-instance NextIDKey Key where
+instance NextIDKey (Key a) where
   nextIDKeyToText = getKey
 
 -- Build keys from namespaces with this operator.
@@ -41,8 +41,9 @@ instance NextIDKey Key where
 s1 <:> s2 = T.concat [s1, ":", s2]
 
 -- Event keys.
-newtype EventIDKey = EventIDKey { getEventIDKey :: Key } deriving (Eq, Show, IDKey)
-newtype NextEventIDKey = NextEventIDKey { getNextEventIDKey :: Key } deriving (Eq, Show, NextIDKey)
+data Event
+newtype EventIDKey = EventIDKey { getEventIDKey :: (Key Event) } deriving (Eq, Show, IDKey)
+newtype NextEventIDKey = NextEventIDKey { getNextEventIDKey :: (Key Event) } deriving (Eq, Show, NextIDKey)
 
 nextEventIDKey :: NextEventIDKey
 nextEventIDKey = NextEventIDKey $ Key "next.event.id"
@@ -85,7 +86,7 @@ getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEven
 -- processes call it at the same time, only one will create a new ID;
 -- the other will return the same ID as the first.
 --
-getOrSetID :: (IDKey a, NextIDKey b) => a -> b -> Redis ->IO (Int)
+getOrSetID :: (IDKey a, NextIDKey b) => a -> b -> Redis -> IO (Int)
 getOrSetID idKey nextIdKey r = do
   id <- get r (idKeyToText idKey) >>= fromRBulk
   case id of
