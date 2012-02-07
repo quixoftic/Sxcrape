@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
+{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
 
 import Database.Redis.Redis
 import Database.Redis.ByteStringClass (BS, toBS, fromBS)
@@ -15,26 +15,27 @@ instance BS T.Text where
   toBS = E.encodeUtf8
   fromBS = E.decodeUtf8
   
-class RedisKey a where
-  (<:>) :: a -> a -> a
+(<:>) :: T.Text -> T.Text -> T.Text
+s1 <:> s2 = T.concat [s1, ":", s2]
 
-instance RedisKey T.Text where
-  s1 <:> s2 = T.concat [s1, ":", s2]
+newtype IDKey = IDKey { getIDKey :: T.Text } deriving (Eq, Show, BS)
+newtype NextIDKey = NextIDKey { getNextIDKey :: T.Text } deriving (Eq, Show, BS)
 
-newtype EventIDKey = EventIDKey { getEventIDKey :: T.Text } deriving (Eq, Show, BS, RedisKey)
-newtype NextEventIDKey = NextEventIDKey { getNextEventIDKey :: T.Text } deriving (Eq, Show, BS, RedisKey)
-
-eventIDKeyPrefix :: EventIDKey
-eventIDKeyPrefix = EventIDKey "event.id"
+newtype NextEventIDKey = NextEventIDKey { getNextEventIDKey :: NextIDKey } deriving (Eq, Show)
 
 nextEventIDKey :: NextEventIDKey
-nextEventIDKey = NextEventIDKey "next.event.id"
+nextEventIDKey = NextEventIDKey $ NextIDKey "next.event.id"
+
+newtype EventIDKey = EventIDKey { getEventIDKey :: IDKey } deriving (Eq, Show)
+
+eventIDKeyPrefix :: T.Text
+eventIDKeyPrefix = "event.id"
 
 eventIDKey :: T.Text -> EventIDKey
-eventIDKey nativeEventID = eventIDKeyPrefix <:> (EventIDKey nativeEventID)
+eventIDKey nativeEventID = EventIDKey $ IDKey $ eventIDKeyPrefix <:> nativeEventID
 
 getOrSetEventID :: T.Text -> Redis -> IO (Int)
-getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEventIDKey r
+getOrSetEventID nativeEventID r = getOrSetID (getEventIDKey (eventIDKey nativeEventID)) (getNextEventIDKey nextEventIDKey) r
 
 -- getOrSetFooID :: T.Text -> T.Text -> Redis -> IO (Int)
 -- getOrSetFooID x y r = getOrSetID x y r
@@ -67,7 +68,7 @@ getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEven
 -- function is race-free. If two processes call it at the same time,
 -- only one will create a new ID; the other will return the same ID as
 -- the first.
-getOrSetID :: (RedisKey a, RedisKey b, BS a, BS b) => a -> b -> Redis ->IO (Int)
+getOrSetID :: IDKey -> NextIDKey -> Redis ->IO (Int)
 getOrSetID idKey nextIdKey r = do
   id <- get r idKey >>= fromRBulk
   case id of
@@ -83,4 +84,4 @@ insertKey :: Redis -> IO (Reply Int)
 insertKey r = incr r ("test:key" :: T.Text)
 
 main :: IO (Int)
-main = connect localhost defaultPort >>= getOrSetEventID "MS1002"
+main = connect localhost defaultPort >>= getOrSetEventID "MS1003"
