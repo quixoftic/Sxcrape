@@ -9,22 +9,14 @@ import qualified Data.Text.Encoding as E
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 
--- Generic BS T.Text instance for converting all the *Key types to
--- Redis BS (as long as they derive from BS).
---
 instance BS T.Text where
   toBS = E.encodeUtf8
   fromBS = E.decodeUtf8
 
+type Key = T.Text
+
 data IDKey a k = IDKey a k deriving (Eq, Show)
-
-idKey :: (IDKey a T.Text) -> T.Text
-idKey (IDKey t k) = k
-
 data NextIDKey a k = NextIDKey a k deriving  (Eq, Show)
-
-nextIDKey :: (NextIDKey a T.Text) -> T.Text
-nextIDKey (NextIDKey t k) = k
 
 -- Build keys from namespaces with this operator.
 (<:>) :: T.Text -> T.Text -> T.Text
@@ -33,8 +25,8 @@ s1 <:> s2 = T.concat [s1, ":", s2]
 -- Event keys.
 --
 data Event = Event deriving (Eq, Show)
-type EventIDKey = IDKey Event T.Text
-type NextEventIDKey = NextIDKey Event T.Text
+type EventIDKey = IDKey Event Key
+type NextEventIDKey = NextIDKey Event Key
 
 nextEventIDKey :: NextEventIDKey
 nextEventIDKey = NextIDKey Event "next.event.id"
@@ -51,8 +43,8 @@ getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEven
 -- Artist keys.
 --
 data Artist = Artist deriving (Eq, Show)
-type ArtistIDKey = IDKey Artist T.Text
-type NextArtistIDKey = NextIDKey Artist T.Text
+type ArtistIDKey = IDKey Artist Key
+type NextArtistIDKey = NextIDKey Artist Key
 
 artistIDKeyPrefix :: T.Text
 artistIDKeyPrefix = "artist.id"
@@ -69,8 +61,8 @@ getOrSetArtistID nativeArtistID r = getOrSetID (artistIDKey nativeArtistID) next
 -- Venue keys.
 --
 data Venue = Venue deriving (Eq, Show)
-type VenueIDKey = IDKey Venue T.Text
-type NextVenueIDKey = NextIDKey Venue T.Text
+type VenueIDKey = IDKey Venue Key
+type NextVenueIDKey = NextIDKey Venue Key
 
 venueIDKeyPrefix :: T.Text
 venueIDKeyPrefix = "venue.id"
@@ -89,17 +81,17 @@ getOrSetVenueID nativeVenueID r = getOrSetID (venueIDKey nativeVenueID) nextVenu
 -- processes call it at the same time, only one will create a new ID;
 -- the other will return the same ID as the first.
 --
-getOrSetID :: IDKey a T.Text -> NextIDKey a T.Text -> Redis -> IO (Int)
-getOrSetID theIDKey theNextIDKey r = do
-  maybeID <- get r (idKey theIDKey) >>= fromRBulk
+getOrSetID :: IDKey a Key -> NextIDKey a Key -> Redis -> IO (Int)
+getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) r = do
+  maybeID <- get r idKey >>= fromRBulk
   case maybeID of
     Just id -> return id
     Nothing -> do
-      newID <- incr r (nextIDKey theNextIDKey) >>= fromRInt
-      reply <- setNx r (idKey theIDKey) newID >>= fromRInt
+      newID <- incr r nextIDKey >>= fromRInt
+      reply <- setNx r idKey newID >>= fromRInt
       if (reply == 1)
         then return newID
-        else liftM fromJust $ get r (idKey theIDKey) >>= fromRBulk
+        else liftM fromJust $ get r idKey >>= fromRBulk
 
 main :: IO (Int)
 main = connect localhost defaultPort >>= getOrSetEventID "MS1005"
