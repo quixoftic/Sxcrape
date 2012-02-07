@@ -16,17 +16,15 @@ instance BS T.Text where
   toBS = E.encodeUtf8
   fromBS = E.decodeUtf8
 
-newtype Key = Key { getKey :: T.Text } deriving (Eq, Show, BS)
-
 data IDKey a k = IDKey a k deriving (Eq, Show)
 
-idKey :: (IDKey a Key) -> T.Text
-idKey (IDKey t k) = getKey k
+idKey :: (IDKey a T.Text) -> T.Text
+idKey (IDKey t k) = k
 
 data NextIDKey a k = NextIDKey a k deriving  (Eq, Show)
 
-nextIDKey :: (NextIDKey a Key) -> T.Text
-nextIDKey (NextIDKey t k) = getKey k
+nextIDKey :: (NextIDKey a T.Text) -> T.Text
+nextIDKey (NextIDKey t k) = k
 
 -- Build keys from namespaces with this operator.
 (<:>) :: T.Text -> T.Text -> T.Text
@@ -35,17 +33,17 @@ s1 <:> s2 = T.concat [s1, ":", s2]
 -- Event keys.
 --
 data Event = Event deriving (Eq, Show)
-type EventIDKey = IDKey Event Key
-type NextEventIDKey = NextIDKey Event Key
+type EventIDKey = IDKey Event T.Text
+type NextEventIDKey = NextIDKey Event T.Text
 
 nextEventIDKey :: NextEventIDKey
-nextEventIDKey = NextIDKey Event $ Key "next.event.id"
+nextEventIDKey = NextIDKey Event "next.event.id"
 
 eventIDKeyPrefix :: T.Text
 eventIDKeyPrefix = "event.id"
 
 eventIDKey :: T.Text -> EventIDKey
-eventIDKey nativeEventID = IDKey Event $ Key $ eventIDKeyPrefix <:> nativeEventID
+eventIDKey nativeEventID = IDKey Event $ eventIDKeyPrefix <:> nativeEventID
 
 getOrSetEventID :: T.Text -> Redis -> IO (Int)
 getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEventIDKey r
@@ -53,17 +51,17 @@ getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEven
 -- Artist keys.
 --
 data Artist = Artist deriving (Eq, Show)
-type ArtistIDKey = IDKey Artist Key
-type NextArtistIDKey = NextIDKey Artist Key
+type ArtistIDKey = IDKey Artist T.Text
+type NextArtistIDKey = NextIDKey Artist T.Text
 
 artistIDKeyPrefix :: T.Text
 artistIDKeyPrefix = "artist.id"
 
 nextArtistIDKey :: NextArtistIDKey
-nextArtistIDKey = NextIDKey Artist $ Key "next.artist.id"
+nextArtistIDKey = NextIDKey Artist "next.artist.id"
 
 artistIDKey :: T.Text -> ArtistIDKey
-artistIDKey nativeArtistID = IDKey Artist $ Key $ artistIDKeyPrefix <:> nativeArtistID
+artistIDKey nativeArtistID = IDKey Artist $ artistIDKeyPrefix <:> nativeArtistID
 
 getOrSetArtistID :: T.Text -> Redis -> IO (Int)
 getOrSetArtistID nativeArtistID r = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey r
@@ -71,17 +69,17 @@ getOrSetArtistID nativeArtistID r = getOrSetID (artistIDKey nativeArtistID) next
 -- Venue keys.
 --
 data Venue = Venue deriving (Eq, Show)
-type VenueIDKey = IDKey Venue Key
-type NextVenueIDKey = NextIDKey Venue Key
+type VenueIDKey = IDKey Venue T.Text
+type NextVenueIDKey = NextIDKey Venue T.Text
 
 venueIDKeyPrefix :: T.Text
 venueIDKeyPrefix = "venue.id"
 
 nextVenueIDKey :: NextVenueIDKey
-nextVenueIDKey = NextIDKey Venue $ Key "next.venue.id"
+nextVenueIDKey = NextIDKey Venue "next.venue.id"
 
 venueIDKey :: T.Text -> VenueIDKey
-venueIDKey nativeVenueID = IDKey Venue $ Key $ venueIDKeyPrefix <:> nativeVenueID
+venueIDKey nativeVenueID = IDKey Venue $ venueIDKeyPrefix <:> nativeVenueID
 
 getOrSetVenueID :: T.Text -> Redis -> IO (Int)
 getOrSetVenueID nativeVenueID r = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey r
@@ -91,7 +89,7 @@ getOrSetVenueID nativeVenueID r = getOrSetID (venueIDKey nativeVenueID) nextVenu
 -- processes call it at the same time, only one will create a new ID;
 -- the other will return the same ID as the first.
 --
-getOrSetID :: IDKey a Key -> NextIDKey a Key -> Redis -> IO (Int)
+getOrSetID :: IDKey a T.Text -> NextIDKey a T.Text -> Redis -> IO (Int)
 getOrSetID theIDKey theNextIDKey r = do
   maybeID <- get r (idKey theIDKey) >>= fromRBulk
   case maybeID of
