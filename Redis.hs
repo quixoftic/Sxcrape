@@ -14,6 +14,17 @@ import qualified Data.Text.Encoding as E
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 
+
+getOrSetEventID :: T.Text -> Redis -> IO (Int)
+getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
+
+getOrSetArtistID :: T.Text -> Redis -> IO (Int)
+getOrSetArtistID nativeArtistID = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey
+
+getOrSetVenueID :: T.Text -> Redis -> IO (Int)
+getOrSetVenueID nativeVenueID = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey
+
+
 instance BS T.Text where
   toBS = E.encodeUtf8
   fromBS = E.decodeUtf8
@@ -42,9 +53,6 @@ eventIDKeyPrefix = "event.id"
 eventIDKey :: T.Text -> EventIDKey
 eventIDKey nativeEventID = IDKey Event $ eventIDKeyPrefix <:> nativeEventID
 
-getOrSetEventID :: T.Text -> Redis -> IO (Int)
-getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
-
 -- Artist keys.
 --
 data Artist = Artist deriving (Eq, Show)
@@ -60,9 +68,6 @@ nextArtistIDKey = NextIDKey Artist "next.artist.id"
 artistIDKey :: T.Text -> ArtistIDKey
 artistIDKey nativeArtistID = IDKey Artist  $ artistIDKeyPrefix <:> nativeArtistID
 
-getOrSetArtistID :: T.Text -> Redis -> IO (Int)
-getOrSetArtistID nativeArtistID = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey
-
 -- Venue keys.
 --
 data Venue = Venue deriving (Eq, Show)
@@ -77,9 +82,6 @@ nextVenueIDKey = NextIDKey Venue "next.venue.id"
 
 venueIDKey :: T.Text -> VenueIDKey
 venueIDKey nativeVenueID = IDKey Venue $ venueIDKeyPrefix <:> nativeVenueID
-
-getOrSetVenueID :: T.Text -> Redis -> IO (Int)
-getOrSetVenueID nativeVenueID = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey
 
 -- Return an ID for idKey if it exists, otherwise make a new one by
 -- incrementing the next ID key. This function is race-free. If two
