@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 import Database.Redis.Redis
 import Database.Redis.ByteStringClass (BS, toBS, fromBS)
