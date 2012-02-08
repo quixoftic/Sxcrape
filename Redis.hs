@@ -11,8 +11,6 @@ import Data.Maybe
 import Control.Monad
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as B
 
 
 getOrSetEventID :: T.Text -> Redis -> IO (Int)
