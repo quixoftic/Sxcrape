@@ -2,3 +2,4 @@
 *.hi
 all-event-urls
 get-event
+store-event

@@ -1,5 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module Redis ( getOrSetEventID
+             , getOrSetArtistID 
+             , getOrSetVenueID
+             ) where
+
 import Database.Redis.Redis
 import Database.Redis.ByteStringClass (BS, toBS, fromBS)
 import Data.Maybe
@@ -92,9 +97,6 @@ getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) r = do
       if (reply == 1)
         then return newID
         else liftM fromJust $ get r idKey >>= fromRBulk
-
-main :: IO (Int)
-main = connect localhost defaultPort >>= getOrSetEventID "MS1005"
 
 -- Canary test for key type-safety. This should not compile:
 --

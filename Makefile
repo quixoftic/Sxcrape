@@ -1,4 +1,4 @@
-all: all-event-urls get-event redis-test
+all: all-event-urls get-event store-event
 
 all-event-urls: AllEventURLs.hs EventURLs.hs
 	ghc --make -optl"-Wl,-read_only_relocs,suppress" -o $@ $^
@@ -6,8 +6,8 @@ all-event-urls: AllEventURLs.hs EventURLs.hs
 get-event: GetEvent.hs Event.hs ParserUtils.hs
 	ghc --make -optl"-Wl,-read_only_relocs,suppress" -o $@ $^
 
-redis-test: RedisTest.hs
+store-event: StoreEvent.hs Redis.hs
 	ghc --make -optl"-Wl,-read_only_relocs,suppress" -o $@ $^
 
 clean:
-	rm -f  *.hi *.o get-event all-event-urls redis-test
+	rm -f  *.hi *.o get-event all-event-urls store-event
