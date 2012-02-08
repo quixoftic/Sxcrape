@@ -43,7 +43,7 @@ eventIDKey :: T.Text -> EventIDKey
 eventIDKey nativeEventID = IDKey Event $ eventIDKeyPrefix <:> nativeEventID
 
 getOrSetEventID :: T.Text -> Redis -> IO (Int)
-getOrSetEventID nativeEventID r = getOrSetID (eventIDKey nativeEventID) nextEventIDKey r
+getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
 
 -- Artist keys.
 --
@@ -58,10 +58,10 @@ nextArtistIDKey :: NextArtistIDKey
 nextArtistIDKey = NextIDKey Artist "next.artist.id"
 
 artistIDKey :: T.Text -> ArtistIDKey
-artistIDKey nativeArtistID = IDKey Artist $ artistIDKeyPrefix <:> nativeArtistID
+artistIDKey nativeArtistID = IDKey Artist  $ artistIDKeyPrefix <:> nativeArtistID
 
 getOrSetArtistID :: T.Text -> Redis -> IO (Int)
-getOrSetArtistID nativeArtistID r = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey r
+getOrSetArtistID nativeArtistID = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey
 
 -- Venue keys.
 --
@@ -79,7 +79,7 @@ venueIDKey :: T.Text -> VenueIDKey
 venueIDKey nativeVenueID = IDKey Venue $ venueIDKeyPrefix <:> nativeVenueID
 
 getOrSetVenueID :: T.Text -> Redis -> IO (Int)
-getOrSetVenueID nativeVenueID r = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey r
+getOrSetVenueID nativeVenueID = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey
 
 -- Return an ID for idKey if it exists, otherwise make a new one by
 -- incrementing the next ID key. This function is race-free. If two
