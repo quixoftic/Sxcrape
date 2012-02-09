@@ -3,6 +3,9 @@
 module Redis ( getOrSetEventID
              , getOrSetArtistID 
              , getOrSetVenueID
+             , saddEvents
+             , saddArtists
+             , saddVenues
              ) where
 
 import Database.Redis.Redis
@@ -22,6 +25,14 @@ getOrSetArtistID nativeArtistID = getOrSetID (artistIDKey nativeArtistID) nextAr
 getOrSetVenueID :: T.Text -> Redis -> IO (Int)
 getOrSetVenueID nativeVenueID = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey
 
+saddEvents :: T.Text -> Redis -> IO (Int)
+saddEvents nativeEventID = saddNativeID eventSetKey nativeEventID
+
+saddArtists :: T.Text -> Redis -> IO (Int)
+saddArtists nativeArtistID = saddNativeID artistSetKey nativeArtistID
+
+saddVenues :: T.Text -> Redis -> IO (Int)
+saddVenues nativeVenueID = saddNativeID venueSetKey nativeVenueID
 
 instance BS T.Text where
   toBS = E.encodeUtf8
@@ -30,7 +41,8 @@ instance BS T.Text where
 type Key = T.Text
 
 data IDKey a k = IDKey a k deriving (Eq, Show)
-data NextIDKey a k = NextIDKey a k deriving  (Eq, Show)
+data NextIDKey a k = NextIDKey a k deriving (Eq, Show)
+data SetKey a k = SetKey a k deriving (Eq, Show)
 
 -- Build keys from namespaces with this operator.
 (<:>) :: T.Text -> T.Text -> T.Text
@@ -41,6 +53,7 @@ s1 <:> s2 = T.concat [s1, ":", s2]
 data Event = Event deriving (Eq, Show)
 type EventIDKey = IDKey Event Key
 type NextEventIDKey = NextIDKey Event Key
+type EventSetKey = SetKey Event Key
 
 nextEventIDKey :: NextEventIDKey
 nextEventIDKey = NextIDKey Event "next.event.id"
@@ -51,11 +64,15 @@ eventIDKeyPrefix = "event.id"
 eventIDKey :: T.Text -> EventIDKey
 eventIDKey nativeEventID = IDKey Event $ eventIDKeyPrefix <:> nativeEventID
 
+eventSetKey :: EventSetKey
+eventSetKey = SetKey Event "events"
+
 -- Artist keys.
 --
 data Artist = Artist deriving (Eq, Show)
 type ArtistIDKey = IDKey Artist Key
 type NextArtistIDKey = NextIDKey Artist Key
+type ArtistSetKey = SetKey Artist Key
 
 artistIDKeyPrefix :: T.Text
 artistIDKeyPrefix = "artist.id"
@@ -66,11 +83,15 @@ nextArtistIDKey = NextIDKey Artist "next.artist.id"
 artistIDKey :: T.Text -> ArtistIDKey
 artistIDKey nativeArtistID = IDKey Artist  $ artistIDKeyPrefix <:> nativeArtistID
 
+artistSetKey :: ArtistSetKey
+artistSetKey = SetKey Artist "artists"
+
 -- Venue keys.
 --
 data Venue = Venue deriving (Eq, Show)
 type VenueIDKey = IDKey Venue Key
 type NextVenueIDKey = NextIDKey Venue Key
+type VenueSetKey = SetKey Venue Key
 
 venueIDKeyPrefix :: T.Text
 venueIDKeyPrefix = "venue.id"
@@ -80,6 +101,13 @@ nextVenueIDKey = NextIDKey Venue "next.venue.id"
 
 venueIDKey :: T.Text -> VenueIDKey
 venueIDKey nativeVenueID = IDKey Venue $ venueIDKeyPrefix <:> nativeVenueID
+
+venueSetKey :: VenueSetKey
+venueSetKey = SetKey Venue "venues"
+
+
+-- Generic functions.
+--
 
 -- Return an ID for idKey if it exists, otherwise make a new one by
 -- incrementing the next ID key. This function is race-free. If two
@@ -97,6 +125,12 @@ getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) r = do
       if (reply == 1)
         then return newID
         else liftM fromJust $ get r idKey >>= fromRBulk
+
+-- Type-safe function for adding native (SXSW) IDs to a set.
+--
+saddNativeID :: SetKey a Key -> T.Text -> Redis -> IO (Int)
+saddNativeID (SetKey _ key) nativeID r = do
+  sadd r key nativeID >>= fromRInt
 
 -- Canary test for key type-safety. This should not compile:
 --
