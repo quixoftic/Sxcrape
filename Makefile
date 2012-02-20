@@ -1,9 +1,6 @@
-all: all-event-urls get-event store-event store-all-events
+all: get-event store-event store-all-events sxcrape
 
 export GHC_EXTRA_FLAGS
-
-all-event-urls: AllEventURLs.hs EventURLs.hs
-	ghc --make $(GHC_EXTRA_FLAGS) -o $@ $^
 
 get-event: GetEvent.hs Event.hs ParserUtils.hs
 	ghc --make $(GHC_EXTRA_FLAGS) -o $@ $^
@@ -14,5 +11,8 @@ store-event: StoreEvent.hs Redis.hs
 store-all-events: StoreAllEvents.hs Redis.hs
 	ghc --make $(GHC_EXTRA_FLAGS) -o $@ $^
 
+sxcrape: Sxcrape.hs EventURLs.hs Event.hs ParserUtils.hs Redis.hs
+	ghc --make $(GHC_EXTRA_FLAGS) -o $@ $^
+
 clean:
-	rm -f  *.hi *.o get-event all-event-urls store-event store-all-events
+	rm -f  *.hi *.o get-event store-event store-all-events sxcrape
