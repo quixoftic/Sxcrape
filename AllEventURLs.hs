@@ -5,5 +5,5 @@ import Data.Monoid
 
 main :: IO ()
 main = do
-  eventURLs <- mapM eventURLsForDay [15, 16, 17, 18, 19, 20]
+  eventURLs <- mapM eventURLsForDay [Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
   mapM_ putStrLn $ mconcat eventURLs
