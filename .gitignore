@@ -1,6 +1,6 @@
 *.o
 *.hi
-all-event-urls
 get-event
 store-event
 store-all-events
+sxcrape
