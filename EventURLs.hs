@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module EventURLs ( eventURLsForDay
+module EventURLs ( eventURLs
+                 , eventURLsForDay
                  , Day(..)
                  ) where
 
@@ -8,12 +9,16 @@ import Network.Curl
 import Text.XML.Light
 import Data.Maybe
 import Control.Monad
+import Data.Monoid
 import ParserUtils
 import Data.Data
 
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
          deriving (Eq, Ord, Show, Read, Bounded, Enum, Data, Typeable)
+
+eventURLs :: IO [String]
+eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
 
 eventURLsForDay :: Day -> IO [String]
 eventURLsForDay day = do
