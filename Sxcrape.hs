@@ -12,6 +12,9 @@ import Data.ByteString.Lazy as B hiding (map)
 type URL = String
 
 data Sxcrape = Events { day :: [Day] }
+             | Dump { urls :: FilePath
+                    , event :: URL
+                    }
              | Parse { urls :: FilePath
                      , write_to_file :: Bool
                      , events :: [URL]
@@ -21,22 +24,32 @@ data Sxcrape = Events { day :: [Day] }
 events_ = Events { day = def &= help "Get a specific day (default is all days)"
                  } &= help "Get music event URLs"
          
+dump = Dump { urls = def &= typFile &= help "read event URLs from a file, and write HTML for each event to a separate file"
+            , event = def &= args &= typ "URL"
+            } &= help "Download music event HTML"
+
 parse = Parse { urls = def &= typFile &= help "read event URLs from a file"
               , write_to_file = def &= help "write JSON for each event to a separate file (default is to write them all to stdout)"
               , events = def &= args &= typ "URL ..."
               } &= help "Parse music event details into JSON"
          
-mode = cmdArgsMode $ modes [events_, parse] &= help "Scrape the SXSW music schedule" &= program "sxcrape" &= summary "sxcrape 0.1"
+mode = cmdArgsMode $ modes [events_, dump, parse] &= help "Scrape the SXSW music schedule" &= program "sxcrape" &= summary "sxcrape 0.1"
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
   Events {} -> runEvents x
+  Dump {} -> runDump x
   Parse {} -> runParse x
 
 runEvents :: Sxcrape -> IO ()
 runEvents opts@(Events {}) = if (day opts) == []
                              then eventURLs >>= mapM_ Prelude.putStrLn
                              else mapM eventURLsForDay (day opts) >>= mapM_ Prelude.putStrLn . mconcat
+
+runDump :: Sxcrape -> IO ()
+runDump opts@Dump {..}
+  | event == [] = Prelude.putStrLn "dump mode needs a URL"
+  | otherwise = unsafeCurlGetString event >>= Prelude.putStrLn
 
 runParse :: Sxcrape -> IO ()
 runParse opts@Parse {..}
