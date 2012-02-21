@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, ViewPatterns #-}
 
 module EventURLs ( eventURLs
                  , eventURLsForDay
+                 , eventFromURL
                  , Day(..)
                  ) where
 
@@ -12,10 +13,15 @@ import Control.Monad
 import Data.Monoid
 import ParserUtils
 import Data.Data
+import Data.List
 
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
          deriving (Eq, Ord, Show, Read, Bounded, Enum, Data, Typeable)
+
+-- Note: don't append the trailing slash!
+baseURL :: String
+baseURL = "http://schedule.sxsw.com/2011"
 
 eventURLs :: IO [String]
 eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
@@ -27,12 +33,14 @@ eventURLsForDay day = do
   return $ map (makeAbsoluteURLFrom . fromJust . theHref) eventEls
 
 scheduleURLForDay :: Day -> String
-scheduleURLForDay day = "http://schedule.sxsw.com/2011/?conference=music&day=" 
-                        ++ (show (dayToDate day)) 
-                        ++ "&category=Showcase#"
+scheduleURLForDay day = baseURL ++ "/?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
 
 makeAbsoluteURLFrom :: String -> String
-makeAbsoluteURLFrom u = "http://schedule.sxsw.com/2011" ++ u
+makeAbsoluteURLFrom u = baseURL ++ u
+
+eventFromURL :: String -> Maybe String
+eventFromURL (stripPrefix $ baseURL ++ "/events/" -> Just event) = Just event
+eventFromURL _ = Nothing
 
 dayToDate :: Day -> Int
 dayToDate Tuesday = 15
