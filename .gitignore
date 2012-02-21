@@ -1,6 +1,5 @@
 *.o
 *.hi
-get-event
 store-event
 store-all-events
 sxcrape
