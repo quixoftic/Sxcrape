@@ -1,19 +1,19 @@
-{-# LANGUAGE DeriveDataTypeable, ViewPatterns #-}
+{-# LANGUAGE DeriveDataTypeable, ViewPatterns, OverloadedStrings #-}
 
 module EventURLs ( eventURLs
                  , eventURLsForDay
                  , eventFromURL
+                 , scheduleURLForDay
                  , Day(..)
                  ) where
 
 import Network.Curl
-import Text.XML.Light
 import Data.Maybe
 import Control.Monad
 import Data.Monoid
-import ParserUtils
 import Data.Data
 import Data.List
+import Text.HTML.TagSoup
 
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
@@ -29,8 +29,7 @@ eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, 
 eventURLsForDay :: Day -> IO [String]
 eventURLsForDay day = do
   (_, html) <- curlGetString (scheduleURLForDay day) []
-  let eventEls = findClasses "link_itemMusic" . fromMaybe blank_element $ parseXMLDoc html
-  return $ map (makeAbsoluteURLFrom . fromJust . theHref) eventEls
+  return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags html
 
 scheduleURLForDay :: Day -> String
 scheduleURLForDay day = baseURL ++ "/?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
@@ -49,3 +48,6 @@ dayToDate Thursday = 17
 dayToDate Friday = 18
 dayToDate Saturday = 19
 dayToDate Sunday = 20
+
+eventPattern :: String
+eventPattern = "<a class=\"link_itemMusic\">"
