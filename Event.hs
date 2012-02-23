@@ -6,12 +6,14 @@ module Event ( Event
 
 import Data.Maybe
 import Control.Monad
-import Data.String.Utils as String
+import qualified Data.String.Utils as String (join, replace, strip)
 import Data.Time as Time
 import Locale as Locale
-import Text.XML.Light
-import ParserUtils
 import Data.Data (Data, Typeable)
+import Text.HTML.TagSoup
+
+type XMLTag = Tag String
+type XMLDoc = [XMLTag]
 
 -- It's entirely possible that some events will be missing one or more
 -- of these details. Those that are non-essential (e.g., artistURL)
@@ -29,80 +31,40 @@ data Event = Event { artist :: String
                    , origin :: String
                    , imgURL :: String
                    } deriving (Show, Data, Typeable)
-                     
+
 -- Might need another variant of parseEvent that returns an Either
 -- String Event, or throws an exception, to provide details about why
 -- a parse failed. For now, this will do.
 
-parseEvent :: Element -> Maybe Event
-parseEvent xml = do
-  theArtist <- parseArtist xml
-  theVenue <- parseVenue xml
-  theAddress <- parseAddress xml
-  theStart <- parseStart xml
-  theAges <- parseAges xml
-  theGenre <- parseGenre xml
-  theDescription <- parseDescription xml
-  theArtistURL <- parseArtistURL xml
-  theOrigin <- parseOrigin xml
-  theImgURL <- parseImgURL xml
-  return Event { artist = theArtist
-               , venue = theVenue
-               , address = theAddress
-               , start = theStart
-               , ages = theAges
-               , genre = theGenre
-               , description = theDescription
-               , artistURL = theArtistURL
-               , origin = theOrigin
-               , imgURL = theImgURL
-               }
-                 
--- origin often has weird formatting.
-parseOrigin :: Element -> Maybe String
-parseOrigin = fmap (String.join ", " . words) . maybeStrContent . findClass "event_citystate"
+parseEvent :: XMLDoc -> Event
+parseEvent xml = Event { artist = parseArtist xml
+                       , venue = parseVenue xml
+                       , address = parseAddress xml
+                       , start = fromJust $ parseStart xml
+                       , ages = parseAges xml
+                       , genre = parseGenre xml
+                       , description = parseDescription xml
+                       , artistURL = parseArtistURL xml
+                       , origin = parseOrigin xml
+                       , imgURL = parseImgURL xml
+                       }
+
+-- Origin often has weird formatting.
+parseOrigin :: XMLDoc -> String
+parseOrigin = String.join ", " . words . textOf . (!! 1) . findFirst originPattern
 
 -- Strip out the description line formatting.
-parseDescription :: Element -> Maybe String
-parseDescription = fmap (String.replace "\n" "") . maybeStrContent . findClass "main_content_desc"
+parseDescription :: XMLDoc -> String
+parseDescription = String.replace "\n" "" . textOf . (!! 1) . findFirst descriptionPattern
 
-parseArtist :: Element -> Maybe String
-parseArtist = maybeStrContent . findClass "event_name"
-
-parseGenre :: Element -> Maybe String
-parseGenre =  maybeStrContent . findClass "event_sub_category"
-
-parseImgURL :: Element -> Maybe String
-parseImgURL = theSrc <=< findImg <=< findClass "video_embed"
-
-dateStr :: Element -> Maybe String
-dateStr = maybeStrContent . findClass "date"
-
-timeStr :: Element -> Maybe String
-timeStr = maybeStrContent . findClass "time"
-
-parseVenue :: Element -> Maybe String
-parseVenue = maybeStrContent . findLink <=< listToMaybe . findClasses "venue"
-
-parseAddress :: Element -> Maybe String
-parseAddress = maybeStrContent . findClass "address"
-
-parseArtistURL :: Element -> Maybe String
-parseArtistURL = theHref <=< findLink <=< findClass "web"
-
-parseAges :: Element -> Maybe String
-parseAges = maybeStrContent . secondEl . findClasses "venue"
-  where secondEl (_:x:xs) = Just x
-        secondEl _ = Nothing
-  
 -- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
-parseStart :: Element -> Maybe UTCTime
+parseStart :: XMLDoc -> Maybe UTCTime
 parseStart xml = do
-  cdtTime <- timeStr xml
-  cdtDate <- dateStr xml
+  let cdtTime = parseTimeStr xml
+  let cdtDate = parseDateStr xml
   cdtTimeOfDay <- toTimeOfDay cdtTime
   utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2011 " ++ cdtTime ++ " CDT"
   return utct
@@ -113,3 +75,88 @@ parseStart xml = do
     morning = TimeOfDay 6 0 0
     toUTCTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
     toTimeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
+
+-- The venue and ages fields are odd. For one thing, they both have
+-- the same class ("venue").
+parseVenue :: XMLDoc -> String
+parseVenue = textOf . (!! 3) . findFirst venuePattern
+
+parseAges :: XMLDoc -> String
+parseAges = textOf . (!! 9) . findFirst agesPattern
+
+-- The image URL also requires some special-case code.
+parseImgURL :: XMLDoc -> String
+parseImgURL = fromAttrib "src" . (!! 0) . findFirst imgPattern . findFirst imgURLPattern
+
+-- The remaining fields are all parsed the same way, save the pattern
+-- used to find their elements.
+parseArtist :: XMLDoc -> String
+parseArtist = textOf . (!! 1) . findFirst artistPattern
+
+parseGenre :: XMLDoc -> String
+parseGenre = textOf . (!! 1) . findFirst genrePattern
+
+parseDateStr :: XMLDoc -> String
+parseDateStr = textOf . (!! 1) . findFirst datePattern
+
+parseTimeStr :: XMLDoc -> String
+parseTimeStr = textOf . (!! 1) . findFirst timePattern
+
+parseAddress :: XMLDoc -> String
+parseAddress = textOf . (!! 1) . findFirst addressPattern
+
+parseArtistURL :: XMLDoc -> String
+parseArtistURL = fromAttrib "href" . (!! 0) . findFirst linkPattern . findFirst artistURLPattern
+
+-- Parser helpers
+--
+textOf :: XMLTag -> String
+textOf = String.strip . fromTagText
+
+findFirst :: String -> XMLDoc -> XMLDoc
+findFirst pattern = dropWhile (~/= pattern)
+
+
+-- Patterns used in TagSoup interface to identify items of interest.
+--
+imgPattern :: String
+imgPattern = "<img>"
+
+linkPattern :: String
+linkPattern = "<a>"
+
+eventPattern :: String
+eventPattern = "<a class=\"link_itemMusic\">"
+
+originPattern :: String
+originPattern = "<p class=event_citystate>"
+
+descriptionPattern :: String
+descriptionPattern = "<div class=main_content_desc>"
+
+artistPattern :: String
+artistPattern = "<h1 class=event_name>"
+
+artistURLPattern :: String
+artistURLPattern = "<h2 class=web>"
+
+genrePattern :: String
+genrePattern = "<h3 class=event_sub_category>"
+
+datePattern :: String
+datePattern = "<h2 class=date>"
+
+imgURLPattern :: String
+imgURLPattern = "<div class=video_embed>"
+
+timePattern :: String
+timePattern = "<h2 class=time>"
+
+venuePattern :: String
+venuePattern = "<h2 class=venue>"
+
+agesPattern :: String
+agesPattern = "<h2 class=venue>"
+
+addressPattern :: String
+addressPattern = "<h2 class=address>"

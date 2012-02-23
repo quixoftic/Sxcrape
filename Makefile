@@ -8,7 +8,7 @@ store-event: StoreEvent.hs Redis.hs
 store-all-events: StoreAllEvents.hs Redis.hs EventURLs.hs
 	ghc --make -O2 $(GHC_EXTRA_FLAGS) -o $@ $^
 
-sxcrape: Sxcrape.hs EventURLs.hs Event.hs ParserUtils.hs Redis.hs
+sxcrape: Sxcrape.hs EventURLs.hs Event.hs Redis.hs
 	ghc --make -O2 $(GHC_EXTRA_FLAGS) -o $@ $^
 
 clean:

@@ -4,7 +4,7 @@ import Event
 import System.Console.CmdArgs
 import Data.Monoid
 import Network.Curl
-import Text.XML.Light
+import Text.HTML.TagSoup
 import Data.Maybe
 import Data.Aeson.Generic (encode)
 import Data.ByteString.Lazy as B (putStrLn, ByteString)
@@ -71,11 +71,11 @@ runParse opts@Parse {..}
 
 eventDetailsAsJson :: URL -> IO ByteString
 eventDetailsAsJson url = do
-  Just xml <- getEventDoc url
-  return $ encode $ fromJust $ parseEvent xml
+  xml <- getEventDoc url
+  return $ encode $ parseEvent xml
 
-getEventDoc :: String -> IO (Maybe Element)
-getEventDoc = fmap parseXMLDoc . unsafeCurlGetString
+getEventDoc :: String -> IO [Tag String]
+getEventDoc xml = unsafeCurlGetString xml >>= return . parseTags
 
 unsafeCurlGetString :: String -> IO String
 unsafeCurlGetString url = curlGetString url [] >>= return . snd
