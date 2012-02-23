@@ -36,18 +36,19 @@ data Event = Event { artist :: String
 -- String Event, or throws an exception, to provide details about why
 -- a parse failed. For now, this will do.
 
-parseEvent :: XMLDoc -> Event
-parseEvent xml = Event { artist = parseArtist xml
-                       , venue = parseVenue xml
-                       , address = parseAddress xml
-                       , start = fromJust $ parseStart xml
-                       , ages = parseAges xml
-                       , genre = parseGenre xml
-                       , description = parseDescription xml
-                       , artistURL = parseArtistURL xml
-                       , origin = parseOrigin xml
-                       , imgURL = parseImgURL xml
-                       }
+parseEvent :: String -> Event
+parseEvent xml = let doc = parseTags xml in
+  Event { artist = parseArtist doc
+        , venue = parseVenue doc
+        , address = parseAddress doc
+        , start = fromJust $ parseStart doc
+        , ages = parseAges doc
+        , genre = parseGenre doc
+        , description = parseDescription doc
+        , artistURL = parseArtistURL doc
+        , origin = parseOrigin doc
+        , imgURL = parseImgURL doc
+        }
 
 -- Origin often has weird formatting.
 parseOrigin :: XMLDoc -> String

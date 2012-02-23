@@ -71,11 +71,8 @@ runParse opts@Parse {..}
 
 eventDetailsAsJson :: URL -> IO ByteString
 eventDetailsAsJson url = do
-  xml <- getEventDoc url
+  xml <- unsafeCurlGetString url
   return $ encode $ parseEvent xml
-
-getEventDoc :: String -> IO [Tag String]
-getEventDoc xml = unsafeCurlGetString xml >>= return . parseTags
 
 unsafeCurlGetString :: String -> IO String
 unsafeCurlGetString url = curlGetString url [] >>= return . snd
