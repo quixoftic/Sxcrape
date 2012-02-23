@@ -4,7 +4,6 @@ import Event
 import System.Console.CmdArgs
 import Data.Monoid
 import Network.Curl
-import Text.HTML.TagSoup
 import Data.Maybe
 import Data.Aeson.Generic (encode)
 import Data.ByteString.Lazy as B (putStrLn, ByteString)
