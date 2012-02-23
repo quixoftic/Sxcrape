@@ -32,10 +32,6 @@ data Event = Event { artist :: String
                    , imgURL :: String
                    } deriving (Show, Data, Typeable)
 
--- Might need another variant of parseEvent that returns an Either
--- String Event, or throws an exception, to provide details about why
--- a parse failed. For now, this will do.
-
 parseEvent :: String -> Event
 parseEvent xml = let doc = parseTags xml in
   Event { artist = parseArtist doc
