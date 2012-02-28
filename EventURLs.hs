@@ -3,17 +3,21 @@
 module EventURLs ( eventURLs
                  , eventURLsForDay
                  , eventFromURL
-                 , scheduleURLForDay
+--                 , scheduleURLForDay
                  , Day(..)
                  ) where
 
-import Network.Curl
+import Network.Curl.Download.Lazy
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.Encoding as E
 import Data.Maybe
 import Control.Monad
 import Data.Monoid
 import Data.Data
 import Data.List
 import Text.HTML.TagSoup
+import Text.StringLike
 
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
@@ -23,22 +27,22 @@ data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
 baseURL :: String
 baseURL = "http://schedule.sxsw.com/2011"
 
-eventURLs :: IO [String]
+eventURLs :: IO [T.Text]
 eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
 
-eventURLsForDay :: Day -> IO [String]
+eventURLsForDay :: Day -> IO [T.Text]
 eventURLsForDay day = do
-  (_, html) <- curlGetString (scheduleURLForDay day) []
-  return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags html
+  Right html <- openLazyURI (scheduleURLForDay day)
+  return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags $ E.decodeUtf8 html
 
 scheduleURLForDay :: Day -> String
 scheduleURLForDay day = baseURL ++ "/?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
 
-makeAbsoluteURLFrom :: String -> String
-makeAbsoluteURLFrom u = baseURL ++ u
+makeAbsoluteURLFrom :: T.Text -> T.Text
+makeAbsoluteURLFrom u = (T.pack baseURL) `T.append` u
 
-eventFromURL :: String -> Maybe String
-eventFromURL (stripPrefix $ baseURL ++ "/events/" -> Just event) = Just event
+eventFromURL :: T.Text -> Maybe T.Text
+eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/events/" -> Just event) = Just event
 eventFromURL _ = Nothing
 
 dayToDate :: Day -> Int

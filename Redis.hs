@@ -12,7 +12,7 @@ import Database.Redis.Redis
 import Database.Redis.ByteStringClass (BS, toBS, fromBS)
 import Data.Maybe
 import Control.Monad
-import qualified Data.Text as T
+import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
 
@@ -35,8 +35,8 @@ saddVenues :: T.Text -> Redis -> IO (Int)
 saddVenues nativeVenueID = saddNativeID venueSetKey nativeVenueID
 
 instance BS T.Text where
-  toBS = E.encodeUtf8
-  fromBS = E.decodeUtf8
+  toBS = E.encodeUtf8 . T.toStrict
+  fromBS = T.fromStrict . E.decodeUtf8
 
 type Key = T.Text
 

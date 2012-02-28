@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
 
 module Event ( Event
              , parseEvent
@@ -6,33 +6,33 @@ module Event ( Event
 
 import Data.Maybe
 import Control.Monad
-import qualified Data.String.Utils as String (join, splitWs, strip)
 import Data.Time as Time
 import Locale as Locale
 import Data.Data (Data, Typeable)
 import Text.HTML.TagSoup
+import qualified Data.Text.Lazy as T
 
-type XMLTag = Tag String
+type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
 
 -- It's entirely possible that some events will be missing one or more
 -- of these details. Those that are non-essential (e.g., artistURL)
--- might need to be changed to type Maybe String. Let's see how it
+-- might need to be changed to type Maybe T.Text. Let's see how it
 -- goes.
 
-data Event = Event { artist :: String
-                   , venue :: String
-                   , address :: String
+data Event = Event { artist :: T.Text
+                   , venue :: T.Text
+                   , address :: T.Text
                    , start :: UTCTime
-                   , ages :: String
-                   , genre :: String
-                   , description :: String
-                   , artistURL :: String
-                   , origin :: String
-                   , imgURL :: String
+                   , ages :: T.Text
+                   , genre :: T.Text
+                   , description :: T.Text
+                   , artistURL :: T.Text
+                   , origin :: T.Text
+                   , imgURL :: T.Text
                    } deriving (Show, Data, Typeable)
 
-parseEvent :: String -> Event
+parseEvent :: T.Text -> Event
 parseEvent xml = let doc = parseTags xml in
   Event { artist = parseArtist doc
         , venue = parseVenue doc
@@ -47,12 +47,12 @@ parseEvent xml = let doc = parseTags xml in
         }
 
 -- Origin often has weird formatting.
-parseOrigin :: XMLDoc -> String
-parseOrigin = String.join ", " . words . textOfFirst originPattern
+parseOrigin :: XMLDoc -> T.Text
+parseOrigin = T.intercalate ", " . T.words . textOfFirst originPattern
 
 -- Strip out the description line formatting.
-parseDescription :: XMLDoc -> String
-parseDescription = String.join " " . words . textOfFirst descriptionPattern
+parseDescription :: XMLDoc -> T.Text
+parseDescription = T.intercalate " " . T.words . textOfFirst descriptionPattern
 
 -- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
@@ -60,8 +60,8 @@ parseDescription = String.join " " . words . textOfFirst descriptionPattern
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 parseStart :: XMLDoc -> Maybe UTCTime
 parseStart xml = do
-  let cdtTime = parseTimeStr xml
-  let cdtDate = parseDateStr xml
+  let cdtTime = T.unpack $ parseTimeStr xml
+  let cdtDate = T.unpack $ parseDateStr xml
   cdtTimeOfDay <- toTimeOfDay cdtTime
   utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2011 " ++ cdtTime ++ " CDT"
   return utct
@@ -75,46 +75,46 @@ parseStart xml = do
 
 -- The venue and ages fields are odd. For one thing, they both have
 -- the same class ("venue").
-parseVenue :: XMLDoc -> String
+parseVenue :: XMLDoc -> T.Text
 parseVenue = textOf . (!! 3) . findFirst venuePattern
 
-parseAges :: XMLDoc -> String
+parseAges :: XMLDoc -> T.Text
 parseAges = textOf . (!! 9) . findFirst agesPattern
 
 -- The image and artist URLs also require some special-case code.
-parseImgURL :: XMLDoc -> String
+parseImgURL :: XMLDoc -> T.Text
 parseImgURL = fromAttrib "src" . (!! 0) . findFirst imgPattern . findFirst imgURLPattern
 
-parseArtistURL :: XMLDoc -> String
+parseArtistURL :: XMLDoc -> T.Text
 parseArtistURL = fromAttrib "href" . (!! 0) . findFirst linkPattern . findFirst artistURLPattern
 
 -- The remaining fields are all parsed the same way, save the pattern
 -- used to find their elements.
-parseArtist :: XMLDoc -> String
+parseArtist :: XMLDoc -> T.Text
 parseArtist = textOfFirst artistPattern
 
-parseGenre :: XMLDoc -> String
+parseGenre :: XMLDoc -> T.Text
 parseGenre = textOfFirst genrePattern
 
-parseDateStr :: XMLDoc -> String
+parseDateStr :: XMLDoc -> T.Text
 parseDateStr = textOfFirst datePattern
 
-parseTimeStr :: XMLDoc -> String
+parseTimeStr :: XMLDoc -> T.Text
 parseTimeStr = textOfFirst timePattern
 
-parseAddress :: XMLDoc -> String
+parseAddress :: XMLDoc -> T.Text
 parseAddress = textOfFirst addressPattern
 
 
 -- Parser helpers
 --
-textOf :: XMLTag -> String
-textOf = String.strip . fromTagText
+textOf :: XMLTag -> T.Text
+textOf = T.strip . fromTagText
 
 findFirst :: String -> XMLDoc -> XMLDoc
 findFirst pattern = dropWhile (~/= pattern)
 
-textOfFirst :: String -> XMLDoc -> String
+textOfFirst :: String -> XMLDoc -> T.Text
 textOfFirst pattern = textOf . (!! 1) . findFirst pattern
 
 -- Patterns used in TagSoup interface to identify items of interest.

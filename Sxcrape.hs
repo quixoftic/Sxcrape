@@ -1,15 +1,19 @@
-{-# LANGUAGE DeriveDataTypeable, RecordWildCards #-}
+{-# LANGUAGE DeriveDataTypeable, RecordWildCards, OverloadedStrings #-}
 import EventURLs
 import Event
 import System.Console.CmdArgs
 import Data.Monoid
-import Network.Curl
+import Network.Curl.Download.Lazy
 import Data.Maybe
 import Data.Aeson.Generic (encode)
 import Data.ByteString.Lazy as B (putStrLn, ByteString)
 import System.Directory
 import Control.Monad
 import Control.Exception (bracket)
+import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.IO as T
+import qualified Data.Text.Lazy.Encoding as E
+import Data.Either
 
 type URL = String
 
@@ -44,11 +48,11 @@ main = cmdArgsRun mode >>= \x -> case x of
 
 runEvents :: Sxcrape -> IO ()
 runEvents opts@(Events {}) = if (day opts) == []
-                             then eventURLs >>= mapM_ Prelude.putStrLn
-                             else mapM eventURLsForDay (day opts) >>= mapM_ Prelude.putStrLn . mconcat
+                             then eventURLs >>= mapM_ T.putStrLn
+                             else mapM eventURLsForDay (day opts) >>= mapM_ T.putStrLn . mconcat
 
 runDump :: Sxcrape -> IO ()
-runDump opts@Dump {..} = unsafeCurlGetString event >>= Prelude.putStrLn
+runDump opts@Dump {..} = unsafeCurlGetText (T.pack event) >>= T.putStrLn
 
 runMultiDump :: Sxcrape -> IO ()
 runMultiDump opts@MultiDump {..} = do
@@ -56,28 +60,31 @@ runMultiDump opts@MultiDump {..} = do
         Just dirName -> dirName
         Nothing -> "."
   createDirectoryIfMissing True outputDir
-  eventURLs <- fmap lines $ readFile urls
+  eventURLs <- fmap T.lines $ T.readFile urls
   withCurrentDirectory outputDir $ do
-    contents <- mapM unsafeCurlGetString eventURLs
-    mapM_ (\(url, contents) -> writeFile (urlToFilename url) contents) $ zip eventURLs contents
+    contents <- mapM unsafeCurlGetText eventURLs
+    mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip eventURLs contents
 
 runParse :: Sxcrape -> IO ()
 runParse opts@Parse {..}
   | events == [] = Prelude.putStrLn "Nothing to parse!"
   | otherwise   = do
-    jsonResults <- mapM eventDetailsAsJson events
+    let eventsText = map T.pack events
+    jsonResults <- mapM eventDetailsAsJson eventsText
     mapM_ B.putStrLn jsonResults
 
-eventDetailsAsJson :: URL -> IO ByteString
+eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = do
-  xml <- unsafeCurlGetString url
+  xml <- unsafeCurlGetText url
   return $ encode $ parseEvent xml
 
-unsafeCurlGetString :: String -> IO String
-unsafeCurlGetString url = curlGetString url [] >>= return . snd
+unsafeCurlGetText :: T.Text -> IO T.Text
+unsafeCurlGetText url = do
+  Right xml <- openLazyURI $ T.unpack url
+  return $ E.decodeUtf8 xml
 
-urlToFilename :: URL -> FilePath
-urlToFilename = fromJust . eventFromURL
+urlToFilename :: T.Text -> FilePath
+urlToFilename = T.unpack . fromJust . eventFromURL
 
 withCurrentDirectory :: FilePath -> IO a -> IO a
 withCurrentDirectory dirName io =
