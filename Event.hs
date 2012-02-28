@@ -48,11 +48,11 @@ parseEvent xml = let doc = parseTags xml in
 
 -- Origin often has weird formatting.
 parseOrigin :: XMLDoc -> String
-parseOrigin = String.join ", " . words . textOf . (!! 1) . findFirst originPattern
+parseOrigin = String.join ", " . words . textOfFirst originPattern
 
 -- Strip out the description line formatting.
 parseDescription :: XMLDoc -> String
-parseDescription = String.replace "\n" "" . textOf . (!! 1) . findFirst descriptionPattern
+parseDescription = String.replace "\n" "" . textOfFirst descriptionPattern
 
 -- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
@@ -81,29 +81,30 @@ parseVenue = textOf . (!! 3) . findFirst venuePattern
 parseAges :: XMLDoc -> String
 parseAges = textOf . (!! 9) . findFirst agesPattern
 
--- The image URL also requires some special-case code.
+-- The image and artist URLs also require some special-case code.
 parseImgURL :: XMLDoc -> String
 parseImgURL = fromAttrib "src" . (!! 0) . findFirst imgPattern . findFirst imgURLPattern
+
+parseArtistURL :: XMLDoc -> String
+parseArtistURL = fromAttrib "href" . (!! 0) . findFirst linkPattern . findFirst artistURLPattern
 
 -- The remaining fields are all parsed the same way, save the pattern
 -- used to find their elements.
 parseArtist :: XMLDoc -> String
-parseArtist = textOf . (!! 1) . findFirst artistPattern
+parseArtist = textOfFirst artistPattern
 
 parseGenre :: XMLDoc -> String
-parseGenre = textOf . (!! 1) . findFirst genrePattern
+parseGenre = textOfFirst genrePattern
 
 parseDateStr :: XMLDoc -> String
-parseDateStr = textOf . (!! 1) . findFirst datePattern
+parseDateStr = textOfFirst datePattern
 
 parseTimeStr :: XMLDoc -> String
-parseTimeStr = textOf . (!! 1) . findFirst timePattern
+parseTimeStr = textOfFirst timePattern
 
 parseAddress :: XMLDoc -> String
-parseAddress = textOf . (!! 1) . findFirst addressPattern
+parseAddress = textOfFirst addressPattern
 
-parseArtistURL :: XMLDoc -> String
-parseArtistURL = fromAttrib "href" . (!! 0) . findFirst linkPattern . findFirst artistURLPattern
 
 -- Parser helpers
 --
@@ -113,6 +114,8 @@ textOf = String.strip . fromTagText
 findFirst :: String -> XMLDoc -> XMLDoc
 findFirst pattern = dropWhile (~/= pattern)
 
+textOfFirst :: String -> XMLDoc -> String
+textOfFirst pattern = textOf . (!! 1) . findFirst pattern
 
 -- Patterns used in TagSoup interface to identify items of interest.
 --
