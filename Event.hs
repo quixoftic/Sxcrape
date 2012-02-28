@@ -6,7 +6,7 @@ module Event ( Event
 
 import Data.Maybe
 import Control.Monad
-import qualified Data.String.Utils as String (join, replace, strip)
+import qualified Data.String.Utils as String (join, splitWs, strip)
 import Data.Time as Time
 import Locale as Locale
 import Data.Data (Data, Typeable)
@@ -52,7 +52,7 @@ parseOrigin = String.join ", " . words . textOfFirst originPattern
 
 -- Strip out the description line formatting.
 parseDescription :: XMLDoc -> String
-parseDescription = String.replace "\n" "" . textOfFirst descriptionPattern
+parseDescription = String.join " " . words . textOfFirst descriptionPattern
 
 -- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
