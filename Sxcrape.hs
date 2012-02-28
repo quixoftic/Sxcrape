@@ -3,10 +3,11 @@ import EventURLs
 import Event
 import System.Console.CmdArgs
 import Data.Monoid
-import Network.Curl.Download.Lazy
+import Network.HTTP.Conduit hiding (def)
 import Data.Maybe
 import Data.Aeson.Generic (encode)
-import Data.ByteString.Lazy as B (putStrLn, ByteString)
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as C8 (putStrLn)
 import System.Directory
 import Control.Monad
 import Control.Exception (bracket)
@@ -52,7 +53,7 @@ runEvents opts@(Events {}) = if (day opts) == []
                              else mapM eventURLsForDay (day opts) >>= mapM_ T.putStrLn . mconcat
 
 runDump :: Sxcrape -> IO ()
-runDump opts@Dump {..} = unsafeCurlGetText (T.pack event) >>= T.putStrLn
+runDump opts@Dump {..} = download (T.pack event) >>= T.putStrLn
 
 runMultiDump :: Sxcrape -> IO ()
 runMultiDump opts@MultiDump {..} = do
@@ -62,7 +63,7 @@ runMultiDump opts@MultiDump {..} = do
   createDirectoryIfMissing True outputDir
   eventURLs <- fmap T.lines $ T.readFile urls
   withCurrentDirectory outputDir $ do
-    contents <- mapM unsafeCurlGetText eventURLs
+    contents <- mapM download eventURLs
     mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip eventURLs contents
 
 runParse :: Sxcrape -> IO ()
@@ -71,16 +72,16 @@ runParse opts@Parse {..}
   | otherwise   = do
     let eventsText = map T.pack events
     jsonResults <- mapM eventDetailsAsJson eventsText
-    mapM_ B.putStrLn jsonResults
+    mapM_ C8.putStrLn jsonResults
 
 eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = do
-  xml <- unsafeCurlGetText url
+  xml <- download url
   return $ encode $ parseEvent xml
 
-unsafeCurlGetText :: T.Text -> IO T.Text
-unsafeCurlGetText url = do
-  Right xml <- openLazyURI $ T.unpack url
+download :: T.Text -> IO T.Text
+download url = do
+  xml <- simpleHttp $ T.unpack url
   return $ E.decodeUtf8 xml
 
 urlToFilename :: T.Text -> FilePath

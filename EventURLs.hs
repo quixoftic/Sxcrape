@@ -7,7 +7,7 @@ module EventURLs ( eventURLs
                  , Day(..)
                  ) where
 
-import Network.Curl.Download.Lazy
+import Network.HTTP.Conduit
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as E
@@ -32,7 +32,7 @@ eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, 
 
 eventURLsForDay :: Day -> IO [T.Text]
 eventURLsForDay day = do
-  Right html <- openLazyURI (scheduleURLForDay day)
+  html <- simpleHttp (scheduleURLForDay day)
   return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags $ E.decodeUtf8 html
 
 scheduleURLForDay :: Day -> String

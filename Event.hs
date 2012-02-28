@@ -7,7 +7,7 @@ module Event ( Event
 import Data.Maybe
 import Control.Monad
 import Data.Time as Time
-import Locale as Locale
+import System.Locale
 import Data.Data (Data, Typeable)
 import Text.HTML.TagSoup
 import qualified Data.Text.Lazy as T
