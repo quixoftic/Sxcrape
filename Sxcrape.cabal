@@ -13,8 +13,11 @@ Maintainer:          Drew Hess <dhess-src@quixoftic.com>
 Copyright:           Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
 Category:            Web
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.6
 
+source-repository head
+  type:     git
+  location: git://git.quixoftic.com/git/Sxcrape.git
 
 Executable Sxcrape
            Hs-Source-Dirs:      src
