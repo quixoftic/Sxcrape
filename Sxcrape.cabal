@@ -19,7 +19,7 @@ source-repository head
   type:     git
   location: git://git.quixoftic.com/git/Sxcrape.git
 
-Executable Sxcrape
+Executable sxcrape
            Hs-Source-Dirs:      src
            Main-Is:             Sxcrape.hs
            Build-Depends:       http-conduit >= 1.2.6 && < 1.3,
