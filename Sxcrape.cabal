@@ -1,0 +1,31 @@
+Name:                Sxcrape
+Version:             0.1
+Synopsis:            Scrape the SXSW music showcase schedule.
+Description:         Scrape the SXSW music showcase schedule and:
+                     - generate a list of all event URIs.
+                     - dump the raw HTML for one or more events.
+                     - transform essential event info into JSON.
+Homepage:            http://www.quixoftic.com/
+License:             BSD3
+License-file:        LICENSE
+Author:              Drew Hess <dhess-src@quixoftic.com>
+Maintainer:          Drew Hess <dhess-src@quixoftic.com>
+Copyright:           Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
+Category:            Web
+Build-type:          Simple
+Cabal-version:       >=1.2
+
+
+Executable Sxcrape
+           Hs-Source-Dirs:      src
+           Main-Is:             Sxcrape.hs
+           Build-Depends:       http-conduit >= 1.2.6 && < 1.3,
+                                tagsoup >= 0.12.6 && < 0.13,
+                                text,
+                                base,
+                                directory,
+                                bytestring,
+                                aeson >= 0.6.0.0 && < 0.7,
+                                cmdargs >= 0.9.3 && < 0.10,
+                                old-locale,
+                                time

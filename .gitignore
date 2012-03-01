@@ -1,6 +1,1 @@
-*.o
-*.hi
-store-event
-store-all-events
-sxcrape
-2011/*
+dist/*

@@ -1,13 +1,16 @@
-all: store-event store-all-events sxcrape
+all: local
 
-store-event: StoreEvent.hs Redis.hs
-	ghc --make -O2 -o $@ $^
+local:
+	cabal install --prefix=$(HOME) --user
 
-store-all-events: StoreAllEvents.hs Redis.hs EventURLs.hs
-	ghc --make -O2 -o $@ $^
+sdist:
+	cabal sdist
 
-sxcrape: Sxcrape.hs EventURLs.hs Event.hs Redis.hs
-	ghc --make -O2 -o $@ $^
+check:
+	cabal check
+
+build:
+	cabal build
 
 clean:
-	rm -f  *.hi *.o store-event store-all-events sxcrape
+	cabal clean
