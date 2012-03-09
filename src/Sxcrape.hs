@@ -5,7 +5,7 @@ import System.Console.CmdArgs
 import Data.Monoid
 import Network.HTTP.Conduit hiding (def)
 import Data.Maybe
-import Data.Aeson.Generic (encode)
+import qualified Data.Aeson.Generic as Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as C8 (putStrLn)
 import System.Directory
@@ -68,7 +68,7 @@ runParse [] = Prelude.putStrLn "Nothing to parse!"
 runParse events = mapM eventDetailsAsJson events >>= mapM_ C8.putStrLn
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = download url >>= return . encode . parseEvent
+eventDetailsAsJson url = download url >>= return . Aeson.encode . parseEvent
 
 download :: T.Text -> IO T.Text
 download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
