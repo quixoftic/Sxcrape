@@ -42,37 +42,32 @@ mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape t
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
-  Events {} -> runEvents x
-  Dump {} -> runDump x
-  MultiDump {} -> runMultiDump x
-  Parse {} -> runParse x
+  opts@Events {} -> runEvents (day opts)
+  opts@Dump {} -> runDump $ T.pack $ event opts
+  opts@MultiDump {} -> runMultiDump (urls opts) (output_dir opts)
+  opts@Parse {} -> runParse $ map T.pack (events opts)
 
-runEvents :: Sxcrape -> IO ()
-runEvents opts@(Events {}) = if (day opts) == []
-                             then eventURLs >>= mapM_ T.putStrLn
-                             else mapM eventURLsForDay (day opts) >>= mapM_ T.putStrLn . mconcat
+runEvents :: [Day] -> IO ()
+runEvents [] = eventURLs >>= mapM_ T.putStrLn
+runEvents days = mapM eventURLsForDay days >>= mapM_ T.putStrLn . mconcat
 
-runDump :: Sxcrape -> IO ()
-runDump opts@Dump {..} = download (T.pack event) >>= T.putStrLn
+runDump :: T.Text -> IO ()
+runDump event = download event >>= T.putStrLn
 
-runMultiDump :: Sxcrape -> IO ()
-runMultiDump opts@MultiDump {..} = do
-  let outputDir = case output_dir of
-        Just dirName -> dirName
-        Nothing -> "."
+runMultiDump :: FilePath -> Maybe FilePath -> IO ()
+runMultiDump urlsFile maybeDirName = do
+  let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
-  eventURLs <- fmap T.lines $ T.readFile urls
+  eventURLs <- fmap T.lines $ T.readFile urlsFile
   withCurrentDirectory outputDir $ do
     contents <- mapM download eventURLs
     mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip eventURLs contents
 
-runParse :: Sxcrape -> IO ()
-runParse opts@Parse {..}
-  | events == [] = Prelude.putStrLn "Nothing to parse!"
-  | otherwise   = do
-    let eventsText = map T.pack events
-    jsonResults <- mapM eventDetailsAsJson eventsText
-    mapM_ C8.putStrLn jsonResults
+runParse :: [T.Text] -> IO ()
+runParse [] = Prelude.putStrLn "Nothing to parse!"
+runParse events = do
+  jsonResults <- mapM eventDetailsAsJson events
+  mapM_ C8.putStrLn jsonResults
 
 eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = do
