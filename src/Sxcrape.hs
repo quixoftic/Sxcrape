@@ -65,19 +65,13 @@ runMultiDump urlsFile maybeDirName = do
 
 runParse :: [T.Text] -> IO ()
 runParse [] = Prelude.putStrLn "Nothing to parse!"
-runParse events = do
-  jsonResults <- mapM eventDetailsAsJson events
-  mapM_ C8.putStrLn jsonResults
+runParse events = mapM eventDetailsAsJson events >>= mapM_ C8.putStrLn
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = do
-  xml <- download url
-  return $ encode $ parseEvent xml
+eventDetailsAsJson url = download url >>= return . encode . parseEvent
 
 download :: T.Text -> IO T.Text
-download url = do
-  xml <- simpleHttp $ T.unpack url
-  return $ E.decodeUtf8 xml
+download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
 
 urlToFilename :: T.Text -> FilePath
 urlToFilename = T.unpack . fromJust . eventFromURL
