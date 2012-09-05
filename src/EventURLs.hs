@@ -22,7 +22,7 @@ import Text.StringLike
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
          deriving (Eq, Ord, Show, Read, Bounded, Enum, Data, Typeable)
-
+                  
 -- Note: don't append the trailing slash!
 baseURL :: String
 baseURL = "http://schedule.sxsw.com/2011"
@@ -45,13 +45,10 @@ eventFromURL :: T.Text -> Maybe T.Text
 eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/events/" -> Just event) = Just event
 eventFromURL _ = Nothing
 
+-- Map day-of-week names to SXSW 2011 March day-of-month numbers,
+-- which are used by the SXSW schedule web service.
 dayToDate :: Day -> Int
-dayToDate Tuesday = 15
-dayToDate Wednesday = 16
-dayToDate Thursday = 17
-dayToDate Friday = 18
-dayToDate Saturday = 19
-dayToDate Sunday = 20
+dayToDate day = 15 + fromEnum day -- Tuesday corresponds to Mar 15
 
 eventPattern :: String
 eventPattern = "<a class=\"link_itemMusic\">"
