@@ -11,6 +11,7 @@ import Network.HTTP.Conduit
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.Encoding as E
+import qualified Data.Text.Encoding.Error as EncodingError
 import Data.Maybe
 import Control.Monad
 import Data.Monoid
@@ -25,7 +26,7 @@ data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
                   
 -- Note: don't append the trailing slash!
 baseURL :: String
-baseURL = "http://schedule.sxsw.com/2011"
+baseURL = "http://schedule.sxsw.com"
 
 eventURLs :: IO [T.Text]
 eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
@@ -33,10 +34,10 @@ eventURLs = liftM mconcat $ mapM eventURLsForDay [Tuesday, Wednesday, Thursday, 
 eventURLsForDay :: Day -> IO [T.Text]
 eventURLsForDay day = do
   html <- simpleHttp (scheduleURLForDay day)
-  return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags $ E.decodeUtf8 html
+  return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags $ E.decodeUtf8With EncodingError.lenientDecode html
 
 scheduleURLForDay :: Day -> String
-scheduleURLForDay day = baseURL ++ "/?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
+scheduleURLForDay day = baseURL ++ "/2012?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
 
 makeAbsoluteURLFrom :: T.Text -> T.Text
 makeAbsoluteURLFrom u = (T.pack baseURL) `T.append` u
@@ -45,10 +46,10 @@ eventFromURL :: T.Text -> Maybe T.Text
 eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/events/" -> Just event) = Just event
 eventFromURL _ = Nothing
 
--- Map day-of-week names to SXSW 2011 March day-of-month numbers,
+-- Map day-of-week names to SXSW 2012 March day-of-month numbers,
 -- which are used by the SXSW schedule web service.
 dayToDate :: Day -> Int
-dayToDate day = 15 + fromEnum day -- Tuesday corresponds to Mar 15
+dayToDate day = 13 + fromEnum day -- Tuesday corresponds to Mar 13
 
 eventPattern :: String
-eventPattern = "<a class=\"link_itemMusic\">"
+eventPattern = "<a class=\"more_details\">"
