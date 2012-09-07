@@ -43,7 +43,7 @@ makeAbsoluteURLFrom :: T.Text -> T.Text
 makeAbsoluteURLFrom u = (T.pack baseURL) `T.append` u
 
 eventFromURL :: T.Text -> Maybe T.Text
-eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/events/" -> Just event) = Just event
+eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/2012/events/" -> Just event) = Just event
 eventFromURL _ = Nothing
 
 -- Map day-of-week names to SXSW 2012 March day-of-month numbers,
