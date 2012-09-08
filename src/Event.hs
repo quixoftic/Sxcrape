@@ -23,7 +23,9 @@ type XMLDoc = [XMLTag]
 data Event = Event { artist :: T.Text
                    , venue :: T.Text
                    , address :: T.Text
-                   , start :: UTCTime
+--                   , start :: UTCTime
+                   , date :: T.Text
+                   , time :: T.Text
                    , ages :: T.Text
                    , genre :: T.Text
                    , description :: T.Text
@@ -37,7 +39,9 @@ parseEvent xml = let doc = parseTags xml in
   Event { artist = parseArtist doc
         , venue = parseVenue doc
         , address = parseAddress doc
-        , start = fromJust $ parseStart doc
+--        , start = fromJust $ parseStart doc
+        , date = parseDateStr doc
+        , time = parseTimeStr doc
         , ages = parseAges doc
         , genre = parseGenre doc
         , description = parseDescription doc
@@ -46,24 +50,28 @@ parseEvent xml = let doc = parseTags xml in
         , imgURL = parseImgURL doc
         }
 
--- Origin often has weird formatting.
+-- Origin often has weird formatting, so we scrub all the extraneous
+-- formatting characters.
+-- TODO: parse to "City, State" using "\n" as delimiter.
 parseOrigin :: XMLDoc -> T.Text
-parseOrigin = T.intercalate ", " . T.words . textOfFirst originPattern
+parseOrigin = T.unwords . T.words . fromTagText . (!! 2) . head . sections (~== originPattern) . filter isTagText
 
 -- Strip out the description line formatting.
+-- TODO: preserve the <br/> tags for paragraph formatting.
 parseDescription :: XMLDoc -> T.Text
-parseDescription = T.intercalate " " . T.words . textOfFirst descriptionPattern
+parseDescription = T.intercalate " " . T.words . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
 
--- All SXSW 2011 events happen in 2011 in the CDT timezone. Local
+-- All SXSW 2012 events happen in 2012 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
+-- BUG: currently broken, don't use.
 parseStart :: XMLDoc -> Maybe UTCTime
 parseStart xml = do
   let cdtTime = T.unpack $ parseTimeStr xml
   let cdtDate = T.unpack $ parseDateStr xml
   cdtTimeOfDay <- toTimeOfDay cdtTime
-  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2011 " ++ cdtTime ++ " CDT"
+  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2012 " ++ cdtTime ++ " CDT"
   return utct
   where
     offset tod
@@ -73,34 +81,29 @@ parseStart xml = do
     toUTCTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
     toTimeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
 
--- The venue and ages fields are odd. For one thing, they both have
--- the same class ("venue").
 parseVenue :: XMLDoc -> T.Text
-parseVenue = textOf . (!! 3) . findFirst venuePattern
+parseVenue = textOf . (!! 1) . findFirst venuePattern
 
 parseAges :: XMLDoc -> T.Text
-parseAges = textOf . (!! 9) . findFirst agesPattern
+parseAges = T.strip . fromJust . (T.stripPrefix "Age Policy:") . head . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
 
--- The image and artist URLs also require some special-case code.
 parseImgURL :: XMLDoc -> T.Text
 parseImgURL = fromAttrib "src" . (!! 0) . findFirst imgPattern . findFirst imgURLPattern
 
 parseArtistURL :: XMLDoc -> T.Text
-parseArtistURL = fromAttrib "href" . (!! 0) . findFirst linkPattern . findFirst artistURLPattern
-
--- The remaining fields are all parsed the same way, save the pattern
--- used to find their elements.
-parseArtist :: XMLDoc -> T.Text
-parseArtist = textOfFirst artistPattern
+parseArtistURL = fromAttrib "href" . head . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Online"::String)))
 
 parseGenre :: XMLDoc -> T.Text
-parseGenre = textOfFirst genrePattern
+parseGenre = textOf . (!! 1) . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Genre"::String)))
 
 parseDateStr :: XMLDoc -> T.Text
-parseDateStr = textOfFirst datePattern
+parseDateStr =  T.unwords . T.words . fromTagText . (!! 0) . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
 
 parseTimeStr :: XMLDoc -> T.Text
-parseTimeStr = textOfFirst timePattern
+parseTimeStr = T.unwords . T.words . fromTagText . (!! 1) . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
+
+parseArtist :: XMLDoc -> T.Text
+parseArtist = textOfFirst artistPattern
 
 parseAddress :: XMLDoc -> T.Text
 parseAddress = textOfFirst addressPattern
@@ -128,32 +131,26 @@ linkPattern = "<a>"
 eventPattern :: String
 eventPattern = "<a class=\"link_itemMusic\">"
 
-originPattern :: String
-originPattern = "<p class=event_citystate>"
+originPattern :: Tag T.Text
+originPattern = TagText "From"
 
 descriptionPattern :: String
-descriptionPattern = "<div class=main_content_desc>"
+descriptionPattern = "<div class=\"data clearfix\">"
 
 artistPattern :: String
-artistPattern = "<h1 class=event_name>"
+artistPattern = "<title>"
 
-artistURLPattern :: String
-artistURLPattern = "<h2 class=web>"
+artistURLPattern :: Tag T.Text
+artistURLPattern = TagText "Online"
 
 genrePattern :: String
 genrePattern = "<h3 class=event_sub_category>"
 
-datePattern :: String
-datePattern = "<h2 class=date>"
-
 imgURLPattern :: String
 imgURLPattern = "<div class=video_embed>"
 
-timePattern :: String
-timePattern = "<h2 class=time>"
-
 venuePattern :: String
-venuePattern = "<h2 class=venue>"
+venuePattern = "<h2 class=detail_venue>"
 
 agesPattern :: String
 agesPattern = "<h2 class=venue>"
