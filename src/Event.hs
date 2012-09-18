@@ -29,7 +29,7 @@ data Event = Event { artist :: T.Text
                    , end :: UTCTime
                    , ages :: T.Text
                    , genre :: T.Text
-                   , description :: T.Text
+                   , description :: [T.Text]
                    , artistURL :: T.Text
                    , origin :: T.Text
                    , imgURL :: T.Text
@@ -59,10 +59,10 @@ parseEvent xml = let doc = parseTags xml in
 parseOrigin :: XMLDoc -> T.Text
 parseOrigin = scrubTagText . (!! 2) . head . sections (~== (TagText ("From"::String))) . filter isTagText
 
--- Strip out the description line formatting.
--- TODO: preserve the <br/> tags for paragraph formatting.
-parseDescription :: XMLDoc -> T.Text
-parseDescription = T.intercalate " " . T.words . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
+-- Strip formatting characters (e.g., '\t') and blank lines, but
+-- preserve overall paragraph structure.
+parseDescription :: XMLDoc -> [T.Text]
+parseDescription = filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
 
 parseVenue :: XMLDoc -> T.Text
 parseVenue = scrubTagText . (!! 1) . dropWhile (~/= ("<h2 class=detail_venue>"::String))
