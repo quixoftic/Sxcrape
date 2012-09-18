@@ -9,6 +9,8 @@ import Control.Monad
 import Data.Time as Time
 import System.Locale
 import Data.Data (Data, Typeable)
+import Text.Regex.TDFA ((=~))
+import Text.Regex.TDFA.UTF8
 import Text.HTML.TagSoup
 import qualified Data.Text.Lazy as T
 
@@ -23,9 +25,8 @@ type XMLDoc = [XMLTag]
 data Event = Event { artist :: T.Text
                    , venue :: T.Text
                    , address :: T.Text
---                   , start :: UTCTime
-                   , date :: T.Text
-                   , time :: T.Text
+                   , start :: UTCTime
+                   , end :: UTCTime
                    , ages :: T.Text
                    , genre :: T.Text
                    , description :: T.Text
@@ -39,9 +40,8 @@ parseEvent xml = let doc = parseTags xml in
   Event { artist = parseArtist doc
         , venue = parseVenue doc
         , address = parseAddress doc
---        , start = fromJust $ parseStart doc
-        , date = parseDateStr doc
-        , time = parseTimeStr doc
+        , start = parseStartTime doc
+        , end = parseEndTime doc
         , ages = parseAges doc
         , genre = parseGenre doc
         , description = parseDescription doc
@@ -49,6 +49,9 @@ parseEvent xml = let doc = parseTags xml in
         , origin = parseOrigin doc
         , imgURL = parseImgURL doc
         }
+
+scrubTagText :: Tag T.Text -> T.Text
+scrubTagText = T.unwords . T.words . fromTagText
 
 -- Origin often has weird formatting, so we scrub all the extraneous
 -- formatting characters.
@@ -60,26 +63,6 @@ parseOrigin = T.unwords . T.words . fromTagText . (!! 2) . head . sections (~== 
 -- TODO: preserve the <br/> tags for paragraph formatting.
 parseDescription :: XMLDoc -> T.Text
 parseDescription = T.intercalate " " . T.words . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
-
--- All SXSW 2012 events happen in 2012 in the CDT timezone. Local
--- times given after 11:59 p.m., but before, let's say, 6 a.m.,
--- technically occur on the next day; e.g., if the SXSW schedule says
--- "March 16 1:00AM," it means "March 17 1:00AM CDT."
--- BUG: currently broken, don't use.
-parseStart :: XMLDoc -> Maybe UTCTime
-parseStart xml = do
-  let cdtTime = T.unpack $ parseTimeStr xml
-  let cdtDate = T.unpack $ parseDateStr xml
-  cdtTimeOfDay <- toTimeOfDay cdtTime
-  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ cdtDate ++ " 2012 " ++ cdtTime ++ " CDT"
-  return utct
-  where
-    offset tod
-      | tod >= midnight && tod < morning = 60 * 60 * 24
-      | otherwise                        = 0
-    morning = TimeOfDay 6 0 0
-    toUTCTime = parseTime defaultTimeLocale "%A %B %d %Y %l:%M %p %Z" :: String -> Maybe UTCTime
-    toTimeOfDay = parseTime defaultTimeLocale "%l:%M %p" :: String -> Maybe TimeOfDay
 
 parseVenue :: XMLDoc -> T.Text
 parseVenue = textOf . (!! 1) . findFirst venuePattern
@@ -96,18 +79,61 @@ parseArtistURL = fromAttrib "href" . head . dropWhile (~/= ("<a>"::String)) . he
 parseGenre :: XMLDoc -> T.Text
 parseGenre = textOf . (!! 1) . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Genre"::String)))
 
-parseDateStr :: XMLDoc -> T.Text
-parseDateStr =  T.unwords . T.words . fromTagText . (!! 0) . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
-
-parseTimeStr :: XMLDoc -> T.Text
-parseTimeStr = T.unwords . T.words . fromTagText . (!! 1) . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
-
 parseArtist :: XMLDoc -> T.Text
 parseArtist = textOfFirst artistPattern
 
 parseAddress :: XMLDoc -> T.Text
 parseAddress = textOfFirst addressPattern
 
+-- Parsing the start and end time is one big mess. Sorry.
+--
+parseStartTime :: XMLDoc -> UTCTime
+parseStartTime xml = let cdtTime = parseStartTimeStr xml
+                         cdtDate = parseDateStr xml in
+                     fromJust $ fixUpDateAndTime cdtDate cdtTime
+
+parseEndTime :: XMLDoc -> UTCTime
+parseEndTime xml = let cdtTime = parseEndTimeStr xml
+                       cdtDate = parseDateStr xml in
+                   fromJust $ fixUpDateAndTime cdtDate cdtTime
+
+-- All SXSW 2012 events happen in 2012 in the CDT timezone. Local
+-- times given after 11:59 p.m., but before, let's say, 6 a.m.,
+-- technically occur on the next day; e.g., if the SXSW schedule says
+-- "March 16 1:00AM," it means "March 17 1:00AM CDT."
+fixUpDateAndTime :: T.Text -> T.Text -> Maybe UTCTime
+fixUpDateAndTime cdtDate cdtTime = do
+  cdtTimeOfDay <- toTimeOfDay $ cdtTime
+  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ T.intercalate " " [cdtDate, "2012", cdtTime, "CDT"]
+  return utct
+  where
+    offset tod
+      | tod >= midnight && tod < morning = 60 * 60 * 24
+      | otherwise                        = 0
+    morning = TimeOfDay 6 0 0
+    toUTCTime = parseTime defaultTimeLocale "%A, %B %d %Y %l:%M%p %Z" . T.unpack :: T.Text -> Maybe UTCTime
+    toTimeOfDay = parseTime defaultTimeLocale "%l:%M%p" . T.unpack :: T.Text -> Maybe TimeOfDay
+
+dateAndTimeText :: XMLDoc -> (T.Text, T.Text)
+dateAndTimeText = (\(date:time:_) -> (date, time)) . map scrubTagText . take 2 . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
+
+parseDateStr :: XMLDoc -> T.Text
+parseDateStr = fst . dateAndTimeText
+
+startEndRegex :: String
+startEndRegex = "[[:space:]]*-[[:space:]]*"
+
+extractStartTimeStr :: T.Text -> T.Text
+extractStartTimeStr str = (\(start, _, _) -> T.pack start) $ ((T.unpack str) =~ startEndRegex :: (String, String, String))
+
+extractEndTimeStr :: T.Text -> T.Text
+extractEndTimeStr str = (\(_, _, end) -> T.pack end) $ ((T.unpack str) =~ startEndRegex :: (String, String, String))
+
+parseStartTimeStr :: XMLDoc -> T.Text
+parseStartTimeStr = extractStartTimeStr . snd . dateAndTimeText
+
+parseEndTimeStr :: XMLDoc -> T.Text
+parseEndTimeStr = extractEndTimeStr . snd . dateAndTimeText
 
 -- Parser helpers
 --
