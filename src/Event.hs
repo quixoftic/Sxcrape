@@ -50,14 +50,14 @@ parseEvent xml = let doc = parseTags xml in
         , imgURL = parseImgURL doc
         }
 
-scrubTagText :: Tag T.Text -> T.Text
-scrubTagText = T.unwords . T.words . fromTagText
+-- Parsing for each field.
+--
 
 -- Origin often has weird formatting, so we scrub all the extraneous
 -- formatting characters.
 -- TODO: parse to "City, State" using "\n" as delimiter.
 parseOrigin :: XMLDoc -> T.Text
-parseOrigin = T.unwords . T.words . fromTagText . (!! 2) . head . sections (~== originPattern) . filter isTagText
+parseOrigin = scrubTagText . (!! 2) . head . sections (~== (TagText ("From"::String))) . filter isTagText
 
 -- Strip out the description line formatting.
 -- TODO: preserve the <br/> tags for paragraph formatting.
@@ -65,25 +65,25 @@ parseDescription :: XMLDoc -> T.Text
 parseDescription = T.intercalate " " . T.words . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
 
 parseVenue :: XMLDoc -> T.Text
-parseVenue = textOf . (!! 1) . findFirst venuePattern
+parseVenue = scrubTagText . (!! 1) . dropWhile (~/= ("<h2 class=detail_venue>"::String))
 
 parseAges :: XMLDoc -> T.Text
 parseAges = T.strip . fromJust . (T.stripPrefix "Age Policy:") . head . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
 
 parseImgURL :: XMLDoc -> T.Text
-parseImgURL = fromAttrib "src" . (!! 0) . findFirst imgPattern . findFirst imgURLPattern
+parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= ("<img>"::String)) . dropWhile (~/= ("<div class=video_embed>"::String))
 
 parseArtistURL :: XMLDoc -> T.Text
 parseArtistURL = fromAttrib "href" . head . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Online"::String)))
 
 parseGenre :: XMLDoc -> T.Text
-parseGenre = textOf . (!! 1) . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Genre"::String)))
+parseGenre = scrubTagText . (!! 1) . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Genre"::String)))
 
 parseArtist :: XMLDoc -> T.Text
-parseArtist = textOfFirst artistPattern
+parseArtist = scrubTagText . (!! 1) . dropWhile (~/= ("<title>"::String))
 
 parseAddress :: XMLDoc -> T.Text
-parseAddress = textOfFirst addressPattern
+parseAddress = scrubTagText . (!! 1) . dropWhile (~/= ("<h2 class=address>"::String))
 
 -- Parsing the start and end time is one big mess. Sorry.
 --
@@ -120,6 +120,8 @@ dateAndTimeText = (\(date:time:_) -> (date, time)) . map scrubTagText . take 2 .
 parseDateStr :: XMLDoc -> T.Text
 parseDateStr = fst . dateAndTimeText
 
+-- The start and end time formatting is all over the place. Resort to
+-- regexps.
 startEndRegex :: String
 startEndRegex = "[[:space:]]*-[[:space:]]*"
 
@@ -137,49 +139,5 @@ parseEndTimeStr = extractEndTimeStr . snd . dateAndTimeText
 
 -- Parser helpers
 --
-textOf :: XMLTag -> T.Text
-textOf = T.strip . fromTagText
-
-findFirst :: String -> XMLDoc -> XMLDoc
-findFirst pattern = dropWhile (~/= pattern)
-
-textOfFirst :: String -> XMLDoc -> T.Text
-textOfFirst pattern = textOf . (!! 1) . findFirst pattern
-
--- Patterns used in TagSoup interface to identify items of interest.
---
-imgPattern :: String
-imgPattern = "<img>"
-
-linkPattern :: String
-linkPattern = "<a>"
-
-eventPattern :: String
-eventPattern = "<a class=\"link_itemMusic\">"
-
-originPattern :: Tag T.Text
-originPattern = TagText "From"
-
-descriptionPattern :: String
-descriptionPattern = "<div class=\"data clearfix\">"
-
-artistPattern :: String
-artistPattern = "<title>"
-
-artistURLPattern :: Tag T.Text
-artistURLPattern = TagText "Online"
-
-genrePattern :: String
-genrePattern = "<h3 class=event_sub_category>"
-
-imgURLPattern :: String
-imgURLPattern = "<div class=video_embed>"
-
-venuePattern :: String
-venuePattern = "<h2 class=detail_venue>"
-
-agesPattern :: String
-agesPattern = "<h2 class=venue>"
-
-addressPattern :: String
-addressPattern = "<h2 class=address>"
+scrubTagText :: Tag T.Text -> T.Text
+scrubTagText = T.unwords . T.words . fromTagText
