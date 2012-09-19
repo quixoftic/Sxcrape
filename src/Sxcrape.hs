@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, RecordWildCards, OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable, ViewPatterns, RecordWildCards, OverloadedStrings #-}
 import EventURLs
 import Event
 import System.Console.CmdArgs
@@ -38,8 +38,8 @@ multiDump = record MultiDump { output_dir = def
                                             , urls := def += argPos 0 += typFile
                                             ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
 
-parse = record Parse { events = def } [ events := def += args += typ "URL ..."
-                                      ] += help "Parse music event details into JSON"
+parse = record Parse { events = def } [ events := def += args += typ "URL|PATH ..."
+                                      ] += help "Parse music event details into JSON, using a URL or file pathname"
 
 mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary ("sxcrape " ++ showVersion version)
 
@@ -71,7 +71,11 @@ runParse [] = Prelude.putStrLn "Nothing to parse!"
 runParse events = mapM eventDetailsAsJson events >>= mapM_ C8.putStrLn
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = download url >>= return . Aeson.encode . parseEvent
+eventDetailsAsJson url = getContents url >>= return . Aeson.encode . parseEvent
+  where
+    getContents url
+      | T.isPrefixOf "http://" url = download url
+      | otherwise                  = T.readFile (T.unpack url)
 
 download :: T.Text -> IO T.Text
 download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
