@@ -29,7 +29,7 @@ Executable sxcrape
                                 directory,
                                 bytestring,
                                 aeson >= 0.6.0.0 && < 0.7,
-                                cmdargs >= 0.9.3 && < 0.10,
+                                cmdargs >= 0.10 && < 0.11,
                                 regex-tdfa >= 1.1.8 && < 1.2,
                                 regex-tdfa-utf8 >= 1.0 && < 1.1,
                                 old-locale,
