@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, RecordWildCards, OverloadedStrings #-}
 import EventURLs
 import Event
-import DebugParse
 import System.Console.CmdArgs
 import Data.Monoid
 import Network.HTTP.Conduit hiding (def)
@@ -24,7 +23,6 @@ data Sxcrape = Events { day :: [Day] }
              | MultiDump { output_dir :: Maybe FilePath,
                            urls :: FilePath }
              | Parse { events :: [URL] }
-             | DebugParse { events :: [URL] }
              deriving (Typeable, Data, Eq, Show)
 
 events_ = record Events {} [ day := def += help "Get a specific day (default is all days)"
@@ -40,10 +38,7 @@ multiDump = record MultiDump {} [ output_dir := def += typDir += help "output du
 parse = record Parse {} [ events := def += args += typ "URL ..."
                         ] += help "Parse music event details into JSON"
 
-debugParse_ = record DebugParse {} [ events := def += args += typ "URL ..."
-                                  ] += help "Debug the event parser"
-        
-mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse, debugParse_] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary "sxcrape 0.1"
+mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary "sxcrape 0.1"
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
@@ -51,7 +46,6 @@ main = cmdArgsRun mode >>= \x -> case x of
   opts@Dump {} -> runDump $ T.pack $ event opts
   opts@MultiDump {} -> runMultiDump (urls opts) (output_dir opts)
   opts@Parse {} -> runParse $ map T.pack (events opts)
-  opts@DebugParse {} -> runDebugParse $ map T.pack (events opts)
 
 runEvents :: [Day] -> IO ()
 runEvents [] = eventURLs >>= mapM_ T.putStrLn
@@ -75,13 +69,6 @@ runParse events = mapM eventDetailsAsJson events >>= mapM_ C8.putStrLn
 
 eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = download url >>= return . Aeson.encode . parseEvent
-
-runDebugParse :: [T.Text] -> IO ()
-runDebugParse [] = Prelude.putStrLn "Nothing to parse!"
-runDebugParse events = mapM outputDebugParse events >>= mapM_ putStrLn
-
-outputDebugParse :: T.Text -> IO String
-outputDebugParse url = download url >>= return . debugParse
 
 download :: T.Text -> IO T.Text
 download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
