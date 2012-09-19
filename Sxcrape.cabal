@@ -1,5 +1,5 @@
 Name:                Sxcrape
-Version:             0.1
+Version:             2012.1
 Synopsis:            Scrape the SXSW music showcase schedule.
 Description:         Scrape the SXSW music showcase schedule and:
                      - generate a list of all event URIs.

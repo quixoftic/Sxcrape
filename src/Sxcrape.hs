@@ -15,6 +15,8 @@ import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
 import qualified Data.Text.Lazy.Encoding as E
 import Data.Either
+import Paths_Sxcrape (version)
+import Data.Version (showVersion)
 
 type URL = String
 
@@ -39,7 +41,7 @@ multiDump = record MultiDump { output_dir = def
 parse = record Parse { events = def } [ events := def += args += typ "URL ..."
                                       ] += help "Parse music event details into JSON"
 
-mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary "sxcrape 0.1"
+mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary ("sxcrape " ++ showVersion version)
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
