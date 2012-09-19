@@ -57,7 +57,7 @@ parseEvent xml = let doc = parseTags xml in
 -- formatting characters.
 -- TODO: parse to "City, State" using "\n" as delimiter.
 parseOrigin :: XMLDoc -> T.Text
-parseOrigin = scrubTagText . (!! 2) . head . sections (~== (TagText ("From"::String))) . filter isTagText
+parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText ("From"::String))) . filter isTagText
 
 -- Strip formatting characters (e.g., '\t') and blank lines, but
 -- preserve overall paragraph structure.
@@ -141,3 +141,6 @@ parseEndTimeStr = extractEndTimeStr . snd . dateAndTimeText
 --
 scrubTagText :: Tag T.Text -> T.Text
 scrubTagText = T.unwords . T.words . fromTagText
+
+cleanLines :: T.Text -> [T.Text]
+cleanLines = filter (/= "") . map (T.unwords . T.words) . T.lines
