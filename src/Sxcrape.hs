@@ -25,18 +25,19 @@ data Sxcrape = Events { day :: [Day] }
              | Parse { events :: [URL] }
              deriving (Typeable, Data, Eq, Show)
 
-events_ = record Events {} [ day := def += help "Get a specific day (default is all days)"
-                           ] += help "Get music event URLs"
+events_ = record Events { day = def } [ day := def += help "Get a specific day (default is all days)"
+                                      ] += help "Get music event URLs"
 
-dump = record Dump {} [ event := def += argPos 0 += typ "URL"
-                      ] += help "Download music event HTML"
+dump = record Dump { event = def } [ event := def += argPos 0 += typ "URL"
+                                   ] += help "Download music event HTML"
 
-multiDump = record MultiDump {} [ output_dir := def += typDir += help "output dump files in this directory"
-                                , urls := def += argPos 0 += typFile
-                                ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
+multiDump = record MultiDump { output_dir = def
+                             , urls = def } [ output_dir := def += typDir += help "output dump files in this directory"
+                                            , urls := def += argPos 0 += typFile
+                                            ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
 
-parse = record Parse {} [ events := def += args += typ "URL ..."
-                        ] += help "Parse music event details into JSON"
+parse = record Parse { events = def } [ events := def += args += typ "URL ..."
+                                      ] += help "Parse music event details into JSON"
 
 mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary "sxcrape 0.1"
 
