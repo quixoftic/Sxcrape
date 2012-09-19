@@ -53,37 +53,43 @@ parseEvent xml = let doc = parseTags xml in
 -- Parsing for each field.
 --
 
+-- A little trick to avoid all the ::String type signatures that are
+-- needed with TagSoup and OverloadedString. Thanks to sclv at Stack
+-- Overflow for the tip.
+s :: String -> String
+s = id
+
 -- Origin often has weird formatting, so we scrub all the extraneous
 -- formatting characters.
 -- TODO: parse to "City, State" using "\n" as delimiter.
 parseOrigin :: XMLDoc -> T.Text
-parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText ("From"::String))) . filter isTagText
+parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
 
 -- Strip formatting characters (e.g., '\t') and blank lines, but
 -- preserve overall paragraph structure.
 parseDescription :: XMLDoc -> [T.Text]
-parseDescription = filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= ("</div>"::String)) . dropWhile (~/= ("<div class=\"block\">"::String)) . dropWhile (~/= ("<div class=\"data clearfix\">"::String))
+parseDescription = filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= s "</div>") . dropWhile (~/= s "<div class=\"block\">") . dropWhile (~/= s "<div class=\"data clearfix\">")
 
 parseVenue :: XMLDoc -> T.Text
-parseVenue = scrubTagText . (!! 1) . dropWhile (~/= ("<h2 class=detail_venue>"::String))
+parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=detail_venue>")
 
 parseAges :: XMLDoc -> T.Text
 parseAges = T.strip . fromJust . (T.stripPrefix "Age Policy:") . head . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
 
 parseImgURL :: XMLDoc -> T.Text
-parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= ("<img>"::String)) . dropWhile (~/= ("<div class=video_embed>"::String))
+parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
 
 parseArtistURL :: XMLDoc -> T.Text
-parseArtistURL = fromAttrib "href" . head . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Online"::String)))
+parseArtistURL = fromAttrib "href" . head . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Online")))
 
 parseGenre :: XMLDoc -> T.Text
-parseGenre = scrubTagText . (!! 1) . dropWhile (~/= ("<a>"::String)) . head . sections (~== (TagText ("Genre"::String)))
+parseGenre = scrubTagText . (!! 1) . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
 
 parseArtist :: XMLDoc -> T.Text
-parseArtist = scrubTagText . (!! 1) . dropWhile (~/= ("<title>"::String))
+parseArtist = scrubTagText . (!! 1) . dropWhile (~/= s "<title>")
 
 parseAddress :: XMLDoc -> T.Text
-parseAddress = scrubTagText . (!! 1) . dropWhile (~/= ("<h2 class=address>"::String))
+parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=address>")
 
 -- Parsing the start and end time is one big mess. Sorry.
 --
@@ -115,7 +121,7 @@ fixUpDateAndTime cdtDate cdtTime = do
     toTimeOfDay = parseTime defaultTimeLocale "%l:%M%p" . T.unpack :: T.Text -> Maybe TimeOfDay
 
 dateAndTimeText :: XMLDoc -> (T.Text, T.Text)
-dateAndTimeText = (\(date:time:_) -> (date, time)) . map scrubTagText . take 2 . filter isTagText . head . sections (~== ("<h3 id=\"detail_time\">"::String))
+dateAndTimeText = (\(date:time:_) -> (date, time)) . map scrubTagText . take 2 . filter isTagText . head . sections (~== s "<h3 id=\"detail_time\">")
 
 parseDateStr :: XMLDoc -> T.Text
 parseDateStr = fst . dateAndTimeText
