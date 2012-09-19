@@ -22,7 +22,7 @@ type URL = String
 
 data Sxcrape = Events { day :: [Day] }
              | Dump { event :: URL }
-             | MultiDump { output_dir :: Maybe FilePath,
+             | BatchDump { output_dir :: Maybe FilePath,
                            urls :: FilePath }
              | Parse { events :: [URL] }
              deriving (Typeable, Data, Eq, Show)
@@ -33,7 +33,7 @@ events_ = record Events { day = def } [ day := def += help "Get a specific day (
 dump = record Dump { event = def } [ event := def += argPos 0 += typ "URL"
                                    ] += help "Download music event HTML"
 
-multiDump = record MultiDump { output_dir = def
+batchDump = record BatchDump { output_dir = def
                              , urls = def } [ output_dir := def += typDir += help "output dump files in this directory"
                                             , urls := def += argPos 0 += typFile
                                             ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
@@ -41,13 +41,13 @@ multiDump = record MultiDump { output_dir = def
 parse = record Parse { events = def } [ events := def += args += typ "URL|PATH ..."
                                       ] += help "Parse music event details into JSON, using a URL or file pathname"
 
-mode = cmdArgsMode_ $ modes_ [events_, dump, multiDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary ("sxcrape " ++ showVersion version)
+mode = cmdArgsMode_ $ modes_ [events_, dump, batchDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary ("sxcrape " ++ showVersion version)
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
   opts@Events {} -> runEvents (day opts)
   opts@Dump {} -> runDump $ T.pack $ event opts
-  opts@MultiDump {} -> runMultiDump (urls opts) (output_dir opts)
+  opts@BatchDump {} -> runBatchDump (urls opts) (output_dir opts)
   opts@Parse {} -> runParse $ map T.pack (events opts)
 
 runEvents :: [Day] -> IO ()
@@ -57,8 +57,8 @@ runEvents days = mapM eventURLsForDay days >>= mapM_ T.putStrLn . mconcat
 runDump :: T.Text -> IO ()
 runDump event = download event >>= T.putStrLn
 
-runMultiDump :: FilePath -> Maybe FilePath -> IO ()
-runMultiDump urlsFile maybeDirName = do
+runBatchDump :: FilePath -> Maybe FilePath -> IO ()
+runBatchDump urlsFile maybeDirName = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
   eventURLs <- fmap T.lines $ T.readFile urlsFile
