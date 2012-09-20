@@ -23,7 +23,7 @@ type URL = String
 data Sxcrape = Events { day :: [Day] }
              | Dump { event :: URL }
              | BatchDump { output_dir :: Maybe FilePath,
-                           urls :: FilePath }
+                           urls :: [URL] }
              | Parse { event :: URL }
              deriving (Typeable, Data, Eq, Show)
 
@@ -35,8 +35,8 @@ dump = record Dump { event = def } [ event := def += argPos 0 += typ "URL"
 
 batchDump = record BatchDump { output_dir = def
                              , urls = def } [ output_dir := def += typDir += help "output dump files in this directory"
-                                            , urls := def += argPos 0 += typFile
-                                            ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
+                                            , urls := def += args += typ "-|URL .."
+                                            ] += help "Download events from one or more URLs given on the command line, or via stdin; and write the HTML of each to a separate file"
 
 parse = record Parse { event = def } [ event := def += argPos 0 += typ "URL|PATH"
                                      ] += help "Parse music event details into JSON, using a URL or the path to a file containing the event HTML"
@@ -47,8 +47,16 @@ main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
   opts@Events {} -> runEvents (day opts)
   opts@Dump {} -> runDump $ T.pack $ event opts
-  opts@BatchDump {} -> runBatchDump (urls opts) (output_dir opts)
+  opts@BatchDump {} -> do
+    args <- readMultipleArgs (urls opts)
+    runBatchDump args (output_dir opts)
   opts@Parse {} -> runParse $ T.pack (event opts)
+
+-- Read [String] from command line or stdin, convert to [T.Text]
+readMultipleArgs :: [String] -> IO [T.Text]
+readMultipleArgs ("-":_) = T.getContents >>= return . T.lines
+readMultipleArgs [] = T.getContents >>= return . T.lines
+readMultipleArgs args = return $ map T.pack args
 
 runEvents :: [Day] -> IO ()
 runEvents [] = eventURLs >>= mapM_ T.putStrLn
@@ -57,14 +65,13 @@ runEvents days = mapM eventURLsForDay days >>= mapM_ T.putStrLn . mconcat
 runDump :: T.Text -> IO ()
 runDump event = download event >>= T.putStrLn
 
-runBatchDump :: FilePath -> Maybe FilePath -> IO ()
-runBatchDump urlsFile maybeDirName = do
+runBatchDump :: [T.Text] -> Maybe FilePath -> IO ()
+runBatchDump urls maybeDirName = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
-  eventURLs <- fmap T.lines $ T.readFile urlsFile
   withCurrentDirectory outputDir $ do
-    contents <- mapM download eventURLs
-    mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip eventURLs contents
+    contents <- mapM download urls
+    mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip urls contents
 
 runParse :: T.Text -> IO ()
 runParse event = eventDetailsAsJson event >>= C8.putStrLn
