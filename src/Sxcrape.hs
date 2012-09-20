@@ -24,7 +24,7 @@ data Sxcrape = Events { day :: [Day] }
              | Dump { event :: URL }
              | BatchDump { output_dir :: Maybe FilePath,
                            urls :: FilePath }
-             | Parse { events :: [URL] }
+             | Parse { event :: URL }
              deriving (Typeable, Data, Eq, Show)
 
 events_ = record Events { day = def } [ day := def += help "Get a specific day (default is all days)"
@@ -38,8 +38,8 @@ batchDump = record BatchDump { output_dir = def
                                             , urls := def += argPos 0 += typFile
                                             ] += help "Download multiple events from a file containing a list of URLs, and write the HTML of each to a separate file"
 
-parse = record Parse { events = def } [ events := def += args += typ "URL|PATH ..."
-                                      ] += help "Parse music event details into JSON, using a URL or file pathname"
+parse = record Parse { event = def } [ event := def += argPos 0 += typ "URL|PATH"
+                                     ] += help "Parse music event details into JSON, using a URL or the path to a file containing the event HTML"
 
 mode = cmdArgsMode_ $ modes_ [events_, dump, batchDump, parse] += help "Scrape the SXSW music schedule" += program "sxcrape" += summary ("sxcrape " ++ showVersion version)
 
@@ -48,7 +48,7 @@ main = cmdArgsRun mode >>= \x -> case x of
   opts@Events {} -> runEvents (day opts)
   opts@Dump {} -> runDump $ T.pack $ event opts
   opts@BatchDump {} -> runBatchDump (urls opts) (output_dir opts)
-  opts@Parse {} -> runParse $ map T.pack (events opts)
+  opts@Parse {} -> runParse $ T.pack (event opts)
 
 runEvents :: [Day] -> IO ()
 runEvents [] = eventURLs >>= mapM_ T.putStrLn
@@ -66,9 +66,8 @@ runBatchDump urlsFile maybeDirName = do
     contents <- mapM download eventURLs
     mapM_ (\(url, contents) -> T.writeFile (urlToFilename url) contents) $ zip eventURLs contents
 
-runParse :: [T.Text] -> IO ()
-runParse [] = Prelude.putStrLn "Nothing to parse!"
-runParse events = mapM eventDetailsAsJson events >>= mapM_ C8.putStrLn
+runParse :: T.Text -> IO ()
+runParse event = eventDetailsAsJson event >>= C8.putStrLn
 
 eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = getContents url >>= return . Aeson.encode . parseEvent
