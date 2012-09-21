@@ -17,7 +17,7 @@ import qualified Data.Text.Lazy.Encoding as E
 import Data.Either
 import Paths_Sxcrape (version)
 import Data.Version (showVersion)
-import System.FilePath.Posix as Posix (splitFileName, splitExtension)
+import System.FilePath.Posix as Posix (splitFileName, splitExtension, combine)
 import Network.URI as URI (uriPath, parseURIReference)
 
 type URL = String
@@ -92,11 +92,7 @@ runBatchParse :: [T.Text] -> Maybe FilePath -> IO ()
 runBatchParse urls maybeDirName = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
-  -- Some of the input URLs may be local files; read them relative to
-  -- the program's working directory, not the output directory.
-  contents <- mapM eventDetailsAsJson urls
-  withCurrentDirectory outputDir $ do
-    mapM_ (\(url, contents) -> C8.writeFile ((urlToFileName url) ++ ".json") contents) $ zip urls contents
+  mapM_ (\url -> C8.writeFile (combine outputDir $ (urlToFileName url) ++ ".json") =<< eventDetailsAsJson url) urls
 
 eventDetailsAsJson :: T.Text -> IO ByteString
 eventDetailsAsJson url = getContents url >>= return . Aeson.encode . parseEvent
