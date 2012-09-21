@@ -42,7 +42,7 @@ parseEvent xml = let doc = parseTags xml in
         , address = parseAddress doc
         , start = parseStartTime doc
         , end = parseEndTime doc
-        , ages = parseAges doc
+        , ages = fromMaybe "Unknown" $ parseAges doc
         , genre = parseGenre doc
         , description = parseDescription doc
         , artistURL = parseArtistURL doc
@@ -73,8 +73,8 @@ parseDescription = filter (/= "") . map (T.unwords . T.words) . T.lines . innerT
 parseVenue :: XMLDoc -> T.Text
 parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=detail_venue>")
 
-parseAges :: XMLDoc -> T.Text
-parseAges = T.strip . fromJust . (T.stripPrefix "Age Policy:") . head . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
+parseAges :: XMLDoc -> Maybe T.Text
+parseAges = liftM (T.strip . fromJust . (T.stripPrefix "Age Policy:")) . listToMaybe . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
 
 parseImgURL :: XMLDoc -> T.Text
 parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
