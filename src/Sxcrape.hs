@@ -17,7 +17,7 @@ import qualified Data.Text.Lazy.Encoding as E
 import Data.Either
 import Paths_Sxcrape (version)
 import Data.Version (showVersion)
-import System.FilePath.Posix as Posix (splitFileName, splitExtension, combine)
+import System.FilePath.Posix as Posix (takeBaseName, combine)
 import Network.URI as URI (uriPath, parseURIReference)
 
 type URL = String
@@ -104,7 +104,7 @@ download :: T.Text -> IO T.Text
 download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
 
 urlToFileName :: T.Text -> FilePath
-urlToFileName = fst . Posix.splitExtension . snd . Posix.splitFileName . URI.uriPath . fromJust . URI.parseURIReference . T.unpack
+urlToFileName = takeBaseName . URI.uriPath . fromJust . URI.parseURIReference . T.unpack
 
 withCurrentDirectory :: FilePath -> IO a -> IO a
 withCurrentDirectory dirName io =
