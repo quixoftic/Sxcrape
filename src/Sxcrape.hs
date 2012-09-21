@@ -82,8 +82,7 @@ runBatchDump urls maybeDirName = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
   withCurrentDirectory outputDir $ do
-    contents <- mapM download urls
-    mapM_ (\(url, contents) -> T.writeFile ((urlToFileName url) ++ ".html") contents) $ zip urls contents
+    mapM_ (\url -> T.writeFile ((urlToFileName url) ++ ".html") =<< download url) urls
 
 runParse :: T.Text -> IO ()
 runParse event = eventDetailsAsJson event >>= C8.putStrLn
