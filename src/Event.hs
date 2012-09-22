@@ -44,7 +44,7 @@ parseEvent xml = let doc = parseTags xml in
         , end = parseEndTime doc
         , ages = fromMaybe "Unknown" $ parseAges doc
         , genre = parseGenre doc
-        , description = parseDescription doc
+        , description = fromMaybe [] $ parseDescription doc
         , artistURL = parseArtistURL doc
         , origin = parseOrigin doc
         , imgURL = parseImgURL doc
@@ -67,8 +67,8 @@ parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . se
 
 -- Strip formatting characters (e.g., '\t') and blank lines, but
 -- preserve overall paragraph structure.
-parseDescription :: XMLDoc -> [T.Text]
-parseDescription = filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= s "</div>") . dropWhile (~/= s "<div class=\"block\">") . dropWhile (~/= s "<div class=\"data clearfix\">")
+parseDescription :: XMLDoc -> Maybe [T.Text]
+parseDescription = liftM (filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= s "</div>")) . listToMaybe . sections (~== s "<div class=\"block\">") . takeWhile (~/= s "<!-- eo data -->") . dropWhile (~/= s "<div class=\"data clearfix\">")
 
 parseVenue :: XMLDoc -> T.Text
 parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=detail_venue>")
