@@ -17,10 +17,8 @@ import qualified Data.Text.Lazy as T
 type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
 
--- It's entirely possible that some events will be missing one or more
--- of these details. Those that are non-essential (e.g., artistURL)
--- might need to be changed to type Maybe T.Text. Let's see how it
--- goes.
+-- Some fields are optional, and are represented either as Maybe a, or as
+-- an empty list.
 
 data Event = Event { artist :: T.Text
                    , venue :: T.Text
