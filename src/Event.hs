@@ -45,7 +45,7 @@ parseEvent xml = let doc = parseTags xml in
         , ages = fromMaybe "Unknown" $ parseAges doc
         , genre = parseGenre doc
         , description = fromMaybe [] $ parseDescription doc
-        , artistURL = parseArtistURL doc
+        , artistURL = fromMaybe "" $ parseArtistURL doc
         , origin = parseOrigin doc
         , imgURL = parseImgURL doc
         }
@@ -79,8 +79,8 @@ parseAges = liftM (T.strip . fromJust . (T.stripPrefix "Age Policy:")) . listToM
 parseImgURL :: XMLDoc -> T.Text
 parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
 
-parseArtistURL :: XMLDoc -> T.Text
-parseArtistURL = fromAttrib "href" . head . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Online")))
+parseArtistURL :: XMLDoc -> Maybe T.Text
+parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
 
 parseGenre :: XMLDoc -> T.Text
 parseGenre = scrubTagText . (!! 1) . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
