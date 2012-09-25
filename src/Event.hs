@@ -25,8 +25,8 @@ type XMLDoc = [XMLTag]
 data Event = Event { artist :: T.Text
                    , venue :: T.Text
                    , address :: T.Text
-                   , start :: UTCTime
-                   , end :: UTCTime
+                   , start :: Maybe UTCTime
+                   , end :: Maybe UTCTime
                    , ages :: T.Text
                    , genre :: T.Text
                    , description :: [T.Text]
@@ -93,15 +93,15 @@ parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=address>")
 
 -- Parsing the start and end time is one big mess. Sorry.
 --
-parseStartTime :: XMLDoc -> UTCTime
+parseStartTime :: XMLDoc -> Maybe UTCTime
 parseStartTime xml = let cdtTime = parseStartTimeStr xml
                          cdtDate = parseDateStr xml in
-                     fromJust $ fixUpDateAndTime cdtDate cdtTime
+                     fixUpDateAndTime cdtDate cdtTime
 
-parseEndTime :: XMLDoc -> UTCTime
+parseEndTime :: XMLDoc -> Maybe UTCTime
 parseEndTime xml = let cdtTime = parseEndTimeStr xml
                        cdtDate = parseDateStr xml in
-                   fromJust $ fixUpDateAndTime cdtDate cdtTime
+                   fixUpDateAndTime cdtDate cdtTime
 
 -- All SXSW 2012 events happen in 2012 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
