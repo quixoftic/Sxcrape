@@ -83,7 +83,7 @@ parseArtistURL :: XMLDoc -> Maybe T.Text
 parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
 
 parseGenre :: XMLDoc -> T.Text
-parseGenre = scrubTagText . (!! 1) . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
+parseGenre = scrubTagText . head  . filter isTagText . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
 
 parseArtist :: XMLDoc -> T.Text
 parseArtist = scrubTagText . (!! 1) . dropWhile (~/= s "<title>")
