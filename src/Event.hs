@@ -61,7 +61,6 @@ s = id
 
 -- Origin often has weird formatting, so we scrub all the extraneous
 -- formatting characters.
--- TODO: parse to "City, State" using "\n" as delimiter.
 parseOrigin :: XMLDoc -> T.Text
 parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
 
