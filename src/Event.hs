@@ -28,7 +28,7 @@ data Event = Event { artist :: T.Text
                    , ages :: T.Text
                    , genre :: T.Text
                    , description :: [T.Text]
-                   , artistURL :: T.Text
+                   , artistURL :: Maybe T.Text
                    , origin :: T.Text
                    , imgURL :: T.Text
                    } deriving (Show, Data, Typeable)
@@ -43,7 +43,7 @@ parseEvent xml = let doc = parseTags xml in
         , ages = fromMaybe "Unknown" $ parseAges doc
         , genre = parseGenre doc
         , description = fromMaybe [] $ parseDescription doc
-        , artistURL = fromMaybe "" $ parseArtistURL doc
+        , artistURL = parseArtistURL doc
         , origin = parseOrigin doc
         , imgURL = parseImgURL doc
         }
