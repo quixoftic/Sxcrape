@@ -25,7 +25,7 @@ data Event = Event { artist :: T.Text
                    , address :: T.Text
                    , start :: Maybe UTCTime
                    , end :: Maybe UTCTime
-                   , ages :: T.Text
+                   , ages :: Maybe T.Text
                    , genre :: T.Text
                    , description :: [T.Text]
                    , artistURL :: Maybe T.Text
@@ -40,7 +40,7 @@ parseEvent xml = let doc = parseTags xml in
         , address = parseAddress doc
         , start = parseStartTime doc
         , end = parseEndTime doc
-        , ages = fromMaybe "Unknown" $ parseAges doc
+        , ages = parseAges doc
         , genre = parseGenre doc
         , description = fromMaybe [] $ parseDescription doc
         , artistURL = parseArtistURL doc
