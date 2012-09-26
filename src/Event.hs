@@ -26,10 +26,10 @@ data Event = Event { artist :: T.Text
                    , start :: Maybe UTCTime
                    , end :: Maybe UTCTime
                    , ages :: Maybe T.Text
-                   , genre :: T.Text
+                   , genre :: Maybe T.Text
                    , description :: [T.Text]
                    , artistURL :: Maybe T.Text
-                   , origin :: T.Text
+                   , origin :: Maybe T.Text
                    , imgURL :: T.Text
                    } deriving (Show, Data, Typeable)
 
@@ -58,9 +58,10 @@ s :: String -> String
 s = id
 
 -- Origin often has weird formatting, so we scrub all the extraneous
--- formatting characters.
-parseOrigin :: XMLDoc -> T.Text
-parseOrigin = T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
+-- formatting characters. Origin may also be the empty string, so wrap
+-- it in a Maybe.
+parseOrigin :: XMLDoc -> Maybe T.Text
+parseOrigin = textToMaybe . T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
 
 -- Strip formatting characters (e.g., '\t') and blank lines, but
 -- preserve overall paragraph structure.
@@ -79,8 +80,9 @@ parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile 
 parseArtistURL :: XMLDoc -> Maybe T.Text
 parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
 
-parseGenre :: XMLDoc -> T.Text
-parseGenre = scrubTagText . head  . filter isTagText . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
+-- Genre may be the empty string, so wrap it in a Maybe.
+parseGenre :: XMLDoc -> Maybe T.Text
+parseGenre = textToMaybe . scrubTagText . head  . filter isTagText . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
 
 parseArtist :: XMLDoc -> T.Text
 parseArtist = scrubTagText . (!! 1) . dropWhile (~/= s "<title>")
@@ -142,6 +144,10 @@ parseEndTimeStr = extractEndTimeStr . snd . dateAndTimeText
 
 -- Parser helpers
 --
+textToMaybe :: T.Text -> Maybe T.Text
+textToMaybe "" = Nothing
+textToMaybe text = Just text
+
 scrubTagText :: Tag T.Text -> T.Text
 scrubTagText = T.unwords . T.words . fromTagText
 
