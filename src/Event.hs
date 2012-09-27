@@ -19,10 +19,15 @@ type XMLDoc = [XMLTag]
 
 -- Some fields are optional, and are represented either as Maybe a, or as
 -- an empty list.
-
+--
+-- The day of the event (e.g., "2012-03-17") is recorded along with
+-- the exact start and end times because some events don't have a
+-- start and end time. By recording the day, which day is given on the
+-- SXSW schedule.
 data Event = Event { artist :: T.Text
                    , venue :: T.Text
                    , address :: T.Text
+                   , day :: T.Text
                    , start :: Maybe UTCTime
                    , end :: Maybe UTCTime
                    , ages :: Maybe T.Text
@@ -38,6 +43,7 @@ parseEvent xml = let doc = parseTags xml in
   Event { artist = parseArtist doc
         , venue = parseVenue doc
         , address = parseAddress doc
+        , day = parseDay doc
         , start = parseStartTime doc
         , end = parseEndTime doc
         , ages = parseAges doc
@@ -89,6 +95,14 @@ parseArtist = scrubTagText . (!! 1) . dropWhile (~/= s "<title>")
 
 parseAddress :: XMLDoc -> T.Text
 parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=address>")
+
+-- Note: the day given in the event info is technically one day
+-- earlier than the actual day, for events whose start time occurs
+-- after midnight CDT.
+parseDay :: XMLDoc -> T.Text
+parseDay doc = T.pack $ showGregorian $ fromJust $ toDay $ T.intercalate " " [parseDateStr doc, "2012"]
+  where
+    toDay = parseTime defaultTimeLocale "%A, %B %d %Y" . T.unpack :: T.Text -> Maybe Day
 
 -- Parsing the start and end time is one big mess. Sorry.
 --
