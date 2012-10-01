@@ -35,4 +35,5 @@ Executable sxcrape
                                 old-locale,
                                 time,
                                 filepath,
-                                network
+                                network,
+                                ghc-prim

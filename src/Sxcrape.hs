@@ -5,7 +5,7 @@ import System.Console.CmdArgs
 import Data.Monoid
 import Network.HTTP.Conduit hiding (def)
 import Data.Maybe
-import qualified Data.Aeson.Generic as Aeson (encode)
+import qualified Data.Aeson.Encode as Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as C8 (putStrLn, writeFile)
 import System.Directory

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, DeriveGeneric #-}
 
 module Event ( Event
              , parseEvent
@@ -13,6 +13,8 @@ import Text.Regex.TDFA ((=~))
 import Text.Regex.TDFA.UTF8
 import Text.HTML.TagSoup
 import qualified Data.Text.Lazy as T
+import GHC.Generics
+import Data.Aeson
 
 type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
@@ -36,7 +38,9 @@ data Event = Event { artist :: T.Text
                    , artistURL :: Maybe T.Text
                    , origin :: Maybe T.Text
                    , imgURL :: T.Text
-                   } deriving (Show, Data, Typeable)
+                   } deriving (Show, Data, Typeable, Generic)
+
+instance ToJSON Event
 
 parseEvent :: T.Text -> Event
 parseEvent xml = let doc = parseTags xml in
