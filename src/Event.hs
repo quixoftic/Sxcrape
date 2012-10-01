@@ -15,6 +15,7 @@ import Text.HTML.TagSoup
 import qualified Data.Text.Lazy as T
 import GHC.Generics
 import Data.Aeson
+import Network.URI as URI (isRelativeReference)
 
 type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
@@ -84,8 +85,15 @@ parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=detail_venue>")
 parseAges :: XMLDoc -> Maybe T.Text
 parseAges = liftM (T.strip . fromJust . (T.stripPrefix "Age Policy:")) . listToMaybe . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
 
+-- Some artist image URLs, specifically the placeholder "Showcasing
+-- Artist" one, are relative to http://schedule.sxsw.com/. Fix those
+-- up.
 parseImgURL :: XMLDoc -> T.Text
-parseImgURL = fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
+parseImgURL = makeAbsolute . fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
+  where
+    makeAbsolute url
+      | URI.isRelativeReference (T.unpack url) = T.concat ["http://schedule.sxsw.com", url]
+      | otherwise                              = url
 
 parseArtistURL :: XMLDoc -> Maybe T.Text
 parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
