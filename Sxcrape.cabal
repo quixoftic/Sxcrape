@@ -5,7 +5,7 @@ Description:         Scrape the SXSW music showcase schedule and:
                      - generate a list of all event URIs.
                      - dump the raw HTML for one or more events.
                      - transform essential event info into JSON.
-Homepage:            http://www.quixoftic.com/
+Homepage:            https://github.com/quixoftic/Sxcrape
 License:             BSD3
 License-file:        LICENSE
 Author:              Drew Hess <dhess-src@quixoftic.com>
@@ -17,7 +17,7 @@ Cabal-version:       >=1.6
 
 source-repository head
   type:     git
-  location: git://git.quixoftic.com/git/Sxcrape.git
+  location: https://github.com/quixoftic/Sxcrape.git
 
 Executable sxcrape
            Hs-Source-Dirs:      src
