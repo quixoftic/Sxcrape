@@ -41,6 +41,7 @@ data Event = Event { artist :: T.Text
                    , imgURL :: T.Text
                    , hashTags :: [T.Text]
                    , songURL :: Maybe T.Text
+                   , videoURL :: Maybe T.Text
                    } deriving (Show, Data, Typeable, Generic)
 
 instance ToJSON Event
@@ -61,6 +62,7 @@ parseEvent xml = let doc = parseTags xml in
         , imgURL = parseImgURL doc
         , hashTags = fromMaybe [] $ parseHashTags doc
         , songURL = parseSongURL doc
+        , videoURL = parseVideoURL doc
         }
 
 -- Parsing for each field.
@@ -102,6 +104,9 @@ parseImgURL = makeAbsolute . fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>
 parseSongURL :: XMLDoc -> Maybe T.Text
 parseSongURL = liftM (T.takeWhile (/= '&') . fromJust . T.stripPrefix "file=" . fromAttrib "value" . head) . listToMaybe . sections (~== s "<param name=\"flashvars\">")
 
+parseVideoURL :: XMLDoc -> Maybe T.Text
+parseVideoURL = liftM (fromAttrib "src") . listToMaybe . filter (~== s "<embed>")
+  
 parseArtistURL :: XMLDoc -> Maybe T.Text
 parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
 
