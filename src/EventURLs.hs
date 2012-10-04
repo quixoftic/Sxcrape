@@ -1,4 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable, ViewPatterns, OverloadedStrings #-}
+--
+-- Module      : EventURLs
+-- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
+-- License     : BSD3 (see LICENSE file)
+-- Maintainer  : dhess-src@quixoftic.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Extract SXSW music event URLs from the daily schedules.
+--
 
 module EventURLs ( eventURLs
                  , eventURLsForDay

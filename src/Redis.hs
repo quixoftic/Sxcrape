@@ -1,4 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+--
+-- Module      : Redis
+-- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
+-- License     : BSD3 (see LICENSE file)
+-- Maintainer  : dhess-src@quixoftic.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Experimental Redis interface for parsed SXSW music event info.
+--
 
 module Redis ( getOrSetEventID
              , getOrSetArtistID 

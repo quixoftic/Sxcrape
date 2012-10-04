@@ -1,4 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, DeriveGeneric #-}
+--
+-- Module      : Event
+-- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
+-- License     : BSD3 (see LICENSE file)
+-- Maintainer  : dhess-src@quixoftic.com
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- Parse SXSW music event pages.
+--
 
 module Event ( Event
              , parseEvent
