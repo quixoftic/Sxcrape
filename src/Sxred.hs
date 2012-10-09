@@ -1,14 +1,16 @@
 import EventURLs
 import System.IO
 import Control.Monad
+import Control.Monad.IO.Class
 import Data.Monoid
 import Redis
-import Database.Redis.Redis
+import Database.Redis
 import Data.Text.Lazy
 
 main :: IO ()
 main = do
-  redis <- connect localhost defaultPort
   urls <- eventURLs
-  eventIDs <- mapM (\id -> getOrSetEventID id redis) urls
-  mapM_ (\id -> putStrLn $ show id) eventIDs
+  conn <- connect defaultConnectInfo
+  runRedis conn $ do
+    eventIDs <- mapM (\id -> getOrSetEventID id) urls
+    liftIO $ mapM_ (\id -> putStrLn $ show id) eventIDs
