@@ -173,5 +173,5 @@ fromBS = T.fromStrict . E.decodeUtf8
 
 -- Canary test for key type-safety. This should not compile:
 --
--- getOrSetFooID :: T.Text -> T.Text -> Redis -> IO (Int)
--- getOrSetFooID x y r = getOrSetID x y r
+--getOrSetFooID :: T.Text -> T.Text -> Redis (Integer)
+--getOrSetFooID x y = getOrSetID x y
