@@ -136,16 +136,6 @@ getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) =
           else do Right (Just id) <- get key
                   return $ valueToInteger id
 
-  -- maybeID <- get r idKey >>= fromRBulk
-  -- case maybeID of
-  --   Just id -> return id
-  --   Nothing -> do
-  --     newID <- incr r nextIDKey >>= fromRInt
-  --     reply <- setNx r idKey newID >>= fromRInt
-  --     if (reply == 1)
-  --       then return newID
-  --       else liftM fromJust $ get r idKey >>= fromRBulk
-
 -- Type-safe function for adding native (SXSW) IDs to a set.
 --
 saddNativeID :: SetKey a Key -> T.Text -> Redis (Integer)
@@ -157,7 +147,7 @@ saddNativeID (SetKey _ key) nativeID =
     return result
 
 -- Helpers
-
+--
 valueToInteger :: BS.ByteString -> Integer
 valueToInteger = fst . fromJust . BS.readInteger
 
