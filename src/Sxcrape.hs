@@ -11,7 +11,7 @@
 --
 
 import EventURLs
-import Event
+import qualified Event
 import System.Console.CmdArgs
 import Data.Monoid
 import Network.HTTP.Conduit hiding (def)
@@ -121,7 +121,7 @@ runBatchParse urls maybeDirName quiet = do
         | otherwise = return ()
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = getContents url >>= return . Aeson.encode . parseEvent
+eventDetailsAsJson url = getContents url >>= return . Aeson.encode . Event.parseEvent
   where
     getContents url
       | T.isPrefixOf "http://" url = download url
