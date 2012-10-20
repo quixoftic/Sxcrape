@@ -10,7 +10,7 @@
 -- Parse SXSW music event pages.
 --
 
-module Event ( Event
+module Event ( Event(..)
              , parseEvent
              ) where
 
