@@ -10,11 +10,11 @@
 -- Scrape the SXSW music event pages.
 --
 
+import qualified Utility
 import EventURLs
 import qualified Event
 import System.Console.CmdArgs
 import Data.Monoid
-import Network.HTTP.Conduit hiding (def)
 import Data.Maybe
 import qualified Data.Aeson.Encode as Aeson (encode)
 import Data.ByteString.Lazy (ByteString)
@@ -24,7 +24,6 @@ import Control.Monad
 import Control.Exception (bracket)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
-import qualified Data.Text.Lazy.Encoding as E
 import Data.Either
 import Paths_Sxcrape (version)
 import Data.Version (showVersion)
@@ -74,37 +73,26 @@ main = cmdArgsRun mode >>= \x -> case x of
   opts@Events {} -> runEvents (day opts)
   opts@Dump {} -> runDump $ T.pack $ event opts
   opts@BatchDump {} -> do
-    args <- readMultipleArgs (urls opts)
+    args <- Utility.readMultipleArgs (urls opts)
     runBatchDump args (output_dir opts) (quiet opts)
   opts@Parse {} -> runParse $ T.pack (event opts)
   opts@BatchParse {} -> do
-    args <- readMultipleArgs (urls opts)
+    args <- Utility.readMultipleArgs (urls opts)
     runBatchParse args (output_dir opts) (quiet opts)
-
--- Read [String] from command line or stdin, convert to [T.Text]
-readMultipleArgs :: [String] -> IO [T.Text]
-readMultipleArgs ("-":_) = T.getContents >>= return . T.lines
-readMultipleArgs [] = T.getContents >>= return . T.lines
-readMultipleArgs args = return $ map T.pack args
 
 runEvents :: [Day] -> IO ()
 runEvents [] = eventURLs >>= mapM_ T.putStrLn
 runEvents days = mapM eventURLsForDay days >>= mapM_ T.putStrLn . mconcat
 
 runDump :: T.Text -> IO ()
-runDump event = download event >>= T.putStrLn
+runDump event = Utility.download event >>= T.putStrLn
 
 runBatchDump :: [T.Text] -> Maybe FilePath -> Bool -> IO ()
 runBatchDump urls maybeDirName quiet = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
   withCurrentDirectory outputDir $ do
-    mapM_ (\url -> printURL url >> download url >>= T.writeFile ((urlToFileName url) ++ ".html")) urls
-      where
-        printURL :: T.Text -> IO ()
-        printURL url
-          | not quiet = T.putStrLn url
-          | otherwise = return ()
+    mapM_ (\url -> (Utility.quietPrint quiet url) >> Utility.download url >>= T.writeFile ((urlToFileName url) ++ ".html")) urls
 
 runParse :: T.Text -> IO ()
 runParse event = eventDetailsAsJson event >>= C8.putStrLn
@@ -113,22 +101,10 @@ runBatchParse :: [T.Text] -> Maybe FilePath -> Bool -> IO ()
 runBatchParse urls maybeDirName quiet = do
   let outputDir = fromMaybe "." maybeDirName
   createDirectoryIfMissing True outputDir
-  mapM_ (\url -> printURL url >> eventDetailsAsJson url >>= C8.writeFile (combine outputDir $ (urlToFileName url) ++ ".json")) urls
-    where
-      printURL :: T.Text -> IO ()
-      printURL url
-        | not quiet = T.putStrLn url
-        | otherwise = return ()
+  mapM_ (\url -> (Utility.quietPrint quiet url) >> eventDetailsAsJson url >>= C8.writeFile (combine outputDir $ (urlToFileName url) ++ ".json")) urls
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = getContents url >>= return . Aeson.encode . Event.parseEvent
-  where
-    getContents url
-      | T.isPrefixOf "http://" url = download url
-      | otherwise                  = T.readFile (T.unpack url)
-
-download :: T.Text -> IO T.Text
-download url = simpleHttp (T.unpack url) >>= return . E.decodeUtf8
+eventDetailsAsJson url = Utility.getContents' url >>= return . Aeson.encode . Event.parseEvent
 
 urlToFileName :: T.Text -> FilePath
 urlToFileName = takeBaseName . URI.uriPath . fromJust . URI.parseURIReference . T.unpack
