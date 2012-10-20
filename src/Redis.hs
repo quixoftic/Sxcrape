@@ -10,7 +10,8 @@
 -- Experimental Redis interface for parsed SXSW music event info.
 --
 
-module Redis ( getOrSetEventID
+module Redis ( importEvent,
+               getOrSetEventID
              , getOrSetArtistID 
              , getOrSetVenueID
              , saddEvents
@@ -18,6 +19,7 @@ module Redis ( getOrSetEventID
              , saddVenues
              ) where
 
+import qualified Event
 import Database.Redis
 import Data.Maybe
 import Control.Monad
@@ -25,7 +27,18 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
-
+-- Import the event and return the internal event ID.
+importEvent :: T.Text -> Event.Event -> Redis (Integer)
+importEvent url event =
+  let artist = Event.artist event
+      venue = Event.venue event
+  in do
+    eventID <- getOrSetEventID url
+    saddEvents url
+    saddArtists artist
+    saddVenues venue
+    return eventID
+  
 getOrSetEventID :: T.Text -> Redis (Integer)
 getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
 
@@ -49,6 +62,7 @@ type Key = T.Text
 data IDKey a k = IDKey a k deriving (Eq, Show)
 data NextIDKey a k = NextIDKey a k deriving (Eq, Show)
 data SetKey a k = SetKey a k deriving (Eq, Show)
+data JSONKey a k = JSONKey a k deriving (Eq, Show)
 
 -- Build keys from namespaces with this operator.
 (<:>) :: T.Text -> T.Text -> T.Text
@@ -56,60 +70,67 @@ s1 <:> s2 = T.concat [s1, ":", s2]
 
 -- Event keys.
 --
-data Event = Event deriving (Eq, Show)
-type EventIDKey = IDKey Event Key
-type NextEventIDKey = NextIDKey Event Key
-type EventSetKey = SetKey Event Key
+data EventT = EventT deriving (Eq, Show)
+type EventIDKey = IDKey EventT Key
+type NextEventIDKey = NextIDKey EventT Key
+type EventSetKey = SetKey EventT Key
+type EventJSONKey = JSONKey EventT Key
 
 nextEventIDKey :: NextEventIDKey
-nextEventIDKey = NextIDKey Event "next.event.id"
+nextEventIDKey = NextIDKey EventT "next.event.id"
 
 eventIDKeyPrefix :: T.Text
 eventIDKeyPrefix = "event.id"
 
 eventIDKey :: T.Text -> EventIDKey
-eventIDKey nativeEventID = IDKey Event $ eventIDKeyPrefix <:> nativeEventID
+eventIDKey nativeEventID = IDKey EventT $ eventIDKeyPrefix <:> nativeEventID
 
 eventSetKey :: EventSetKey
-eventSetKey = SetKey Event "events"
+eventSetKey = SetKey EventT "events"
+
+eventJSONKeyPrefix :: T.Text
+eventJSONKeyPrefix = "event"
+
+eventJSONKey :: T.Text-> EventJSONKey
+eventJSONKey nativeEventID = JSONKey EventT $ eventJSONKeyPrefix <:> nativeEventID
 
 -- Artist keys.
 --
-data Artist = Artist deriving (Eq, Show)
-type ArtistIDKey = IDKey Artist Key
-type NextArtistIDKey = NextIDKey Artist Key
-type ArtistSetKey = SetKey Artist Key
+data ArtistT = ArtistT deriving (Eq, Show)
+type ArtistIDKey = IDKey ArtistT Key
+type NextArtistIDKey = NextIDKey ArtistT Key
+type ArtistSetKey = SetKey ArtistT Key
 
 artistIDKeyPrefix :: T.Text
 artistIDKeyPrefix = "artist.id"
 
 nextArtistIDKey :: NextArtistIDKey
-nextArtistIDKey = NextIDKey Artist "next.artist.id"
+nextArtistIDKey = NextIDKey ArtistT "next.artist.id"
 
 artistIDKey :: T.Text -> ArtistIDKey
-artistIDKey nativeArtistID = IDKey Artist  $ artistIDKeyPrefix <:> nativeArtistID
+artistIDKey nativeArtistID = IDKey ArtistT  $ artistIDKeyPrefix <:> nativeArtistID
 
 artistSetKey :: ArtistSetKey
-artistSetKey = SetKey Artist "artists"
+artistSetKey = SetKey ArtistT "artists"
 
 -- Venue keys.
 --
-data Venue = Venue deriving (Eq, Show)
-type VenueIDKey = IDKey Venue Key
-type NextVenueIDKey = NextIDKey Venue Key
-type VenueSetKey = SetKey Venue Key
+data VenueT = VenueT deriving (Eq, Show)
+type VenueIDKey = IDKey VenueT Key
+type NextVenueIDKey = NextIDKey VenueT Key
+type VenueSetKey = SetKey VenueT Key
 
 venueIDKeyPrefix :: T.Text
 venueIDKeyPrefix = "venue.id"
 
 nextVenueIDKey :: NextVenueIDKey
-nextVenueIDKey = NextIDKey Venue "next.venue.id"
+nextVenueIDKey = NextIDKey VenueT "next.venue.id"
 
 venueIDKey :: T.Text -> VenueIDKey
-venueIDKey nativeVenueID = IDKey Venue $ venueIDKeyPrefix <:> nativeVenueID
+venueIDKey nativeVenueID = IDKey VenueT $ venueIDKeyPrefix <:> nativeVenueID
 
 venueSetKey :: VenueSetKey
-venueSetKey = SetKey Venue "venues"
+venueSetKey = SetKey VenueT "venues"
 
 
 -- Generic functions.
