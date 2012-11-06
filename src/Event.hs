@@ -37,7 +37,8 @@ type XMLDoc = [XMLTag]
 -- the exact start and end times because some events don't have a
 -- start and end time. By recording the day, which day is given on the
 -- SXSW schedule.
-data Event = Event { artist :: T.Text
+data Event = Event { url :: T.Text
+                   , artist :: T.Text
                    , venue :: T.Text
                    , address :: T.Text
                    , day :: T.Text
@@ -58,7 +59,8 @@ instance ToJSON Event
 
 parseEvent :: T.Text -> Event
 parseEvent xml = let doc = parseTags xml in
-  Event { artist = parseArtist doc
+  Event { url = parseURL doc
+        , artist = parseArtist doc
         , venue = parseVenue doc
         , address = parseAddress doc
         , day = parseDay doc
@@ -83,6 +85,14 @@ parseEvent xml = let doc = parseTags xml in
 -- Overflow for the tip.
 s :: String -> String
 s = id
+
+-- Clients will want the original URL. We can't assume that the
+-- original URL is available out-of-band, because the parser may be
+-- operating on a locally cached resource, e.g., a file on the
+-- filesystem. It happens to be contained in the event HTML, so for
+-- consistency we grab it from there.
+parseURL :: XMLDoc -> T.Text
+parseURL = fromAttrib "data-url" . head . head . sections (~== (TagOpen (s "a") [("href", "http://twitter.com/share")]))
 
 -- Origin often has weird formatting, so we scrub all the extraneous
 -- formatting characters. Origin may also be the empty string, so wrap
