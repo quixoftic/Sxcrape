@@ -28,7 +28,7 @@ import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
 -- Import the event and return the internal event ID.
-importEvent :: Event.Event -> Redis (Integer)
+importEvent :: Event.Event -> Redis (BS.ByteString)
 importEvent event =
   let artist = Event.artist event
       venue = Event.venue event
@@ -40,13 +40,13 @@ importEvent event =
     saddVenues venue
     return eventID
   
-getOrSetEventID :: T.Text -> Redis (Integer)
+getOrSetEventID :: T.Text -> Redis (BS.ByteString)
 getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
 
-getOrSetArtistID :: T.Text -> Redis (Integer)
+getOrSetArtistID :: T.Text -> Redis (BS.ByteString)
 getOrSetArtistID nativeArtistID = getOrSetID (artistIDKey nativeArtistID) nextArtistIDKey
 
-getOrSetVenueID :: T.Text -> Redis (Integer)
+getOrSetVenueID :: T.Text -> Redis (BS.ByteString)
 getOrSetVenueID nativeVenueID = getOrSetID (venueIDKey nativeVenueID) nextVenueIDKey
 
 saddEvents :: T.Text -> Redis (Integer)
@@ -142,21 +142,21 @@ venueSetKey = SetKey VenueT "venues"
 -- processes call it at the same time, only one will create a new ID;
 -- the other will return the same ID as the first.
 --
-getOrSetID :: IDKey a Key -> NextIDKey a Key -> Redis (Integer)
+getOrSetID :: IDKey a Key -> NextIDKey a Key -> Redis (BS.ByteString)
 getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) =
   let key = toBS idKey
       nextkey = toBS nextIDKey
     in do
     Right maybeID <- get key
     case maybeID of
-      Just id -> return $ valueToInteger id
+      Just id -> return id
       Nothing -> do
         Right newID <- incr nextkey
         Right reply <- setnx key $ integerToValue newID
         if reply
-          then return newID
+          then return $ integerToValue newID
           else do Right (Just id) <- get key
-                  return $ valueToInteger id
+                  return id
 
 -- Type-safe function for adding native (SXSW) IDs to a set.
 --
