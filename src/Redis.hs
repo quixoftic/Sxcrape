@@ -28,10 +28,11 @@ import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
 -- Import the event and return the internal event ID.
-importEvent :: T.Text -> Event.Event -> Redis (Integer)
-importEvent url event =
+importEvent :: Event.Event -> Redis (Integer)
+importEvent event =
   let artist = Event.artist event
       venue = Event.venue event
+      url = Event.url event
   in do
     eventID <- getOrSetEventID url
     saddEvents url

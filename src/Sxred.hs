@@ -50,7 +50,7 @@ runBatchImport :: [T.Text] -> Bool -> IO ()
 runBatchImport urls quiet = do
   conn <- connect defaultConnectInfo
   runRedis conn $ do
-    mapM_ (\url -> liftIO (Utility.quietPrint quiet url) >> liftIO (eventDetails url) >>= importEvent url) urls
+    mapM_ (\url -> liftIO (Utility.quietPrint quiet url) >> liftIO (eventDetails url) >>= importEvent) urls
 
 eventDetails :: T.Text -> IO Event
 eventDetails url = Utility.getContents' url >>= return . parseEvent
