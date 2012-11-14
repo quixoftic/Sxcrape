@@ -23,7 +23,9 @@ import qualified Event
 import Database.Redis
 import Data.Maybe
 import Control.Monad
+import qualified Data.Aeson.Encode as Aeson (encode)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
@@ -35,6 +37,7 @@ importEvent event =
       url = Event.url event
   in do
     eventID <- getOrSetEventID url
+    setEventJSON (eventJSONKey $ fromBS eventID) event
     saddEvents url
     saddArtists artist
     saddVenues venue
@@ -92,7 +95,7 @@ eventSetKey = SetKey EventT "events"
 eventJSONKeyPrefix :: T.Text
 eventJSONKeyPrefix = "event"
 
-eventJSONKey :: T.Text-> EventJSONKey
+eventJSONKey :: T.Text -> EventJSONKey
 eventJSONKey nativeEventID = JSONKey EventT $ eventJSONKeyPrefix <:> nativeEventID
 
 -- Artist keys.
@@ -157,6 +160,14 @@ getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) =
           then return $ integerToValue newID
           else do Right (Just id) <- get key
                   return id
+
+setEventJSON :: EventJSONKey -> Event.Event -> Redis (Status)
+setEventJSON (JSONKey _ eventKey) event =
+  let key = toBS eventKey
+      value = BS.concat $ BL.toChunks $ Aeson.encode event
+  in do
+    Right status <- set key value
+    return status
 
 -- Type-safe function for adding native (SXSW) IDs to a set.
 --
