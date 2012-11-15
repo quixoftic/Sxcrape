@@ -12,7 +12,7 @@
 
 import qualified Utility
 import EventURLs
-import qualified Event
+import qualified ParseEventDoc
 import System.Console.CmdArgs
 import Data.Monoid
 import Data.Maybe
@@ -104,7 +104,7 @@ runBatchParse urls maybeDirName quiet = do
   mapM_ (\url -> (Utility.quietPrint quiet url) >> eventDetailsAsJson url >>= C8.writeFile (combine outputDir $ (urlToFileName url) ++ ".json")) urls
 
 eventDetailsAsJson :: T.Text -> IO ByteString
-eventDetailsAsJson url = Utility.getContents' url >>= return . Aeson.encode . Event.parseEvent
+eventDetailsAsJson url = Utility.getContents' url >>= return . Aeson.encode . ParseEventDoc.parseEventDoc
 
 urlToFileName :: T.Text -> FilePath
 urlToFileName = takeBaseName . URI.uriPath . fromJust . URI.parseURIReference . T.unpack

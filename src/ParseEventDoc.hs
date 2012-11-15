@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable, OverloadedStrings, DeriveGeneric #-}
 --
--- Module      : Event
+-- Module      : ParseEventDoc
 -- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
 -- License     : BSD3 (see LICENSE file)
 -- Maintainer  : dhess-src@quixoftic.com
@@ -10,9 +10,9 @@
 -- Parse SXSW music event pages.
 --
 
-module Event ( Event(..)
-             , parseEvent
-             ) where
+module ParseEventDoc ( Event(..)
+                      , parseEventDoc
+                      ) where
 
 import Data.Maybe
 import Control.Monad
@@ -57,8 +57,8 @@ data Event = Event { url :: T.Text
 
 instance ToJSON Event
 
-parseEvent :: T.Text -> Event
-parseEvent xml = let doc = parseTags xml in
+parseEventDoc :: T.Text -> Event
+parseEventDoc xml = let doc = parseTags xml in
   Event { url = parseURL doc
         , artist = parseArtist doc
         , venue = parseVenue doc

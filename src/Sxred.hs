@@ -11,7 +11,7 @@
 --
 
 import qualified Utility
-import Event
+import ParseEventDoc
 import System.IO
 import Control.Monad
 import Control.Monad.IO.Class
@@ -53,4 +53,4 @@ runBatchImport urls quiet = do
     mapM_ (\url -> liftIO (Utility.quietPrint quiet url) >> liftIO (eventDetails url) >>= importEvent) urls
 
 eventDetails :: T.Text -> IO Event
-eventDetails url = Utility.getContents' url >>= return . parseEvent
+eventDetails url = Utility.getContents' url >>= return . parseEventDoc
