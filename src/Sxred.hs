@@ -13,6 +13,8 @@
 import qualified Utility
 import ParseEventDoc
 import Event
+import Artist
+import Venue
 import System.IO
 import Control.Monad
 import Control.Monad.IO.Class
@@ -51,7 +53,7 @@ runBatchImport :: [T.Text] -> Bool -> IO ()
 runBatchImport urls quiet = do
   conn <- connect defaultConnectInfo
   runRedis conn $ do
-    mapM_ (\url -> liftIO (Utility.quietPrint quiet url) >> liftIO (eventDetails url) >>= importEvent) urls
+    mapM_ (\url -> liftIO (Utility.quietPrint quiet url) >> liftIO (eventDetails url) >>= importEventDetails) urls
 
-eventDetails :: T.Text -> IO Event
+eventDetails :: T.Text -> IO (Event, Artist, Venue)
 eventDetails url = Utility.getContents' url >>= return . parseEventDoc

@@ -12,7 +12,9 @@
 
 module ParseEventDoc (parseEventDoc) where
 
-import Event
+import qualified Event as E
+import qualified Artist as A
+import qualified Venue as V
 import Data.Maybe
 import Control.Monad
 import Data.Time as Time
@@ -26,25 +28,30 @@ import Network.URI as URI (isRelativeReference)
 type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
 
-parseEventDoc :: T.Text -> Event
+parseEventDoc :: T.Text -> (E.Event, A.Artist, V.Venue)
 parseEventDoc xml = let doc = parseTags xml in
-  Event { url = parseURL doc
-        , artist = parseArtist doc
-        , venue = parseVenue doc
-        , address = parseAddress doc
-        , day = parseDay doc
-        , start = parseStartTime doc
-        , end = parseEndTime doc
-        , ages = parseAges doc
-        , genre = parseGenre doc
-        , description = fromMaybe [] $ parseDescription doc
-        , artistURL = parseArtistURL doc
-        , origin = parseOrigin doc
-        , imgURL = parseImgURL doc
-        , hashTags = fromMaybe [] $ parseHashTags doc
-        , songURL = parseSongURL doc
-        , videoURL = parseVideoURL doc
-        }
+  ( E.Event { E.url = parseURL doc
+            , E.artist = parseArtist doc
+            , E.venue = parseVenue doc
+            , E.day = parseDay doc
+            , E.start = parseStartTime doc
+            , E.end = parseEndTime doc
+            , E.ages = parseAges doc
+            , E.hashTags = fromMaybe [] $ parseHashTags doc
+          }
+   , A.Artist { A.name = parseArtist doc
+              , A.url = parseArtistURL doc
+              , A.genre = parseGenre doc
+              , A.description = fromMaybe [] $ parseDescription doc
+              , A.origin = parseOrigin doc
+              , A.imgURL = parseImgURL doc
+              , A.songURL = parseSongURL doc
+              , A.videoURL = parseVideoURL doc
+              }
+     , V.Venue { V.name = parseVenue doc
+               , V.address = parseAddress doc
+               }
+     )
 
 -- Parsing for each field.
 --

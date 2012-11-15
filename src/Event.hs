@@ -27,19 +27,11 @@ import Data.Aeson
 data Event = Event { url :: T.Text
                    , artist :: T.Text
                    , venue :: T.Text
-                   , address :: T.Text
                    , day :: T.Text
                    , start :: Maybe UTCTime
                    , end :: Maybe UTCTime
                    , ages :: Maybe T.Text
-                   , genre :: Maybe T.Text
-                   , description :: [T.Text]
-                   , artistURL :: Maybe T.Text
-                   , origin :: Maybe T.Text
-                   , imgURL :: T.Text
                    , hashTags :: [T.Text]
-                   , songURL :: Maybe T.Text
-                   , videoURL :: Maybe T.Text
                    } deriving (Show, Data, Typeable, Generic)
 
 instance ToJSON Event

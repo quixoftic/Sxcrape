@@ -10,7 +10,7 @@
 -- Experimental Redis interface for parsed SXSW music event info.
 --
 
-module Redis ( importEvent,
+module Redis ( importEventDetails,
                getOrSetEventID
              , getOrSetArtistID 
              , getOrSetVenueID
@@ -21,6 +21,8 @@ module Redis ( importEvent,
 
 import qualified ParseEventDoc
 import Event
+import Artist
+import Venue
 import Database.Redis
 import Data.Maybe
 import Control.Monad
@@ -30,18 +32,18 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
--- Import the event and return the internal event ID.
-importEvent :: Event -> Redis (BS.ByteString)
-importEvent event =
-  let artist = Event.artist event
-      venue = Event.venue event
-      url = Event.url event
+-- Import the eventDetails and return the internal event ID.
+importEventDetails :: (Event, Artist, Venue) -> Redis (BS.ByteString)
+importEventDetails (event, artist, venue) =
+  let artistName = Artist.name artist
+      venueName = Venue.name venue
+      eventURL = Event.url event
   in do
-    eventID <- getOrSetEventID url
+    eventID <- getOrSetEventID eventURL
     setEventJSON (eventJSONKey $ fromBS eventID) event
-    saddEvents url
-    saddArtists artist
-    saddVenues venue
+    saddEvents eventURL
+    saddArtists artistName
+    saddVenues venueName
     return eventID
   
 getOrSetEventID :: T.Text -> Redis (BS.ByteString)
