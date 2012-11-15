@@ -23,8 +23,7 @@ import Data.Aeson
 --
 -- The day of the event (e.g., "2012-03-17") is recorded along with
 -- the exact start and end times because some events don't have a
--- start and end time. By recording the day, which day is given on the
--- SXSW schedule.
+-- start and end time.
 data Event = Event { url :: T.Text
                    , artist :: T.Text
                    , venue :: T.Text
