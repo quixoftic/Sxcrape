@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings, DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 --
 -- Module      : ParseEventDoc
 -- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
@@ -10,52 +10,21 @@
 -- Parse SXSW music event pages.
 --
 
-module ParseEventDoc ( Event(..)
-                      , parseEventDoc
-                      ) where
+module ParseEventDoc (parseEventDoc) where
 
+import Event
 import Data.Maybe
 import Control.Monad
 import Data.Time as Time
 import System.Locale
-import Data.Data (Data, Typeable)
 import Text.Regex.TDFA ((=~))
 import Text.Regex.TDFA.UTF8
 import Text.HTML.TagSoup
 import qualified Data.Text.Lazy as T
-import GHC.Generics
-import Data.Aeson
 import Network.URI as URI (isRelativeReference)
 
 type XMLTag = Tag T.Text
 type XMLDoc = [XMLTag]
-
--- Some fields are optional, and are represented either as Maybe a, or as
--- an empty list.
---
--- The day of the event (e.g., "2012-03-17") is recorded along with
--- the exact start and end times because some events don't have a
--- start and end time. By recording the day, which day is given on the
--- SXSW schedule.
-data Event = Event { url :: T.Text
-                   , artist :: T.Text
-                   , venue :: T.Text
-                   , address :: T.Text
-                   , day :: T.Text
-                   , start :: Maybe UTCTime
-                   , end :: Maybe UTCTime
-                   , ages :: Maybe T.Text
-                   , genre :: Maybe T.Text
-                   , description :: [T.Text]
-                   , artistURL :: Maybe T.Text
-                   , origin :: Maybe T.Text
-                   , imgURL :: T.Text
-                   , hashTags :: [T.Text]
-                   , songURL :: Maybe T.Text
-                   , videoURL :: Maybe T.Text
-                   } deriving (Show, Data, Typeable, Generic)
-
-instance ToJSON Event
 
 parseEventDoc :: T.Text -> Event
 parseEventDoc xml = let doc = parseTags xml in

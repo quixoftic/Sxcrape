@@ -20,6 +20,7 @@ module Redis ( importEvent,
              ) where
 
 import qualified ParseEventDoc
+import Event
 import Database.Redis
 import Data.Maybe
 import Control.Monad
@@ -30,11 +31,11 @@ import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
 -- Import the event and return the internal event ID.
-importEvent :: ParseEventDoc.Event -> Redis (BS.ByteString)
+importEvent :: Event -> Redis (BS.ByteString)
 importEvent event =
-  let artist = ParseEventDoc.artist event
-      venue = ParseEventDoc.venue event
-      url = ParseEventDoc.url event
+  let artist = Event.artist event
+      venue = Event.venue event
+      url = Event.url event
   in do
     eventID <- getOrSetEventID url
     setEventJSON (eventJSONKey $ fromBS eventID) event
@@ -161,7 +162,7 @@ getOrSetID (IDKey _ idKey) (NextIDKey _ nextIDKey) =
           else do Right (Just id) <- get key
                   return id
 
-setEventJSON :: EventJSONKey -> ParseEventDoc.Event -> Redis (Status)
+setEventJSON :: EventJSONKey -> Event -> Redis (Status)
 setEventJSON (JSONKey _ eventKey) event =
   let key = toBS eventKey
       value = BS.concat $ BL.toChunks $ Aeson.encode event

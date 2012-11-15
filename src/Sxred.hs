@@ -12,6 +12,7 @@
 
 import qualified Utility
 import ParseEventDoc
+import Event
 import System.IO
 import Control.Monad
 import Control.Monad.IO.Class
