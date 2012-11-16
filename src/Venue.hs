@@ -17,8 +17,6 @@ import qualified Data.Text.Lazy as T
 import GHC.Generics
 import Data.Aeson
 
--- Some fields are optional, and are represented either as Maybe a, or as
--- an empty list.
 data Venue = Venue { name :: T.Text
                    , address :: T.Text
                    } deriving (Show, Data, Typeable, Generic)
