@@ -4,12 +4,16 @@ Sxcrape is a collection of tools for scraping the SXSW music show
 schedule (known officially as the "Music Showcase"), and presenting it
 as machine-consumable JSON via a simple REST API.
 
-Currently, it consists of just one tool, `sxcrape`, which parses the
-schedule from the official [SXSW Schedule
-website](http://schedule.sxsw.com/) and creates, for each event, a
-file containing the JSON representation of the event details -- artist
-name, venue, showtime, etc. A simple REST service for serving the JSON
-representation to HTTP clients will be forthcoming.
+Currently, it consists of two tools:
+
+* `sxcrape`, which parses the schedule from the official [SXSW
+Schedule website](http://schedule.sxsw.com/) and creates, for each
+event, a file containing the JSON representation of the event details
+-- artist name, venue, showtime, etc.
+* `sxred`, which imports event pages as JSON into a Redis database.
+
+A simple REST service for serving the JSON representation to HTTP
+clients will be forthcoming.
 
 ## Caveats
 
@@ -28,7 +32,7 @@ SXSW music schedule. We intend to do so soon after SXSW makes their
 
 <pre>
 % sxcrape --help
-sxcrape 2012.7
+sxcrape 2012.8
 
 sxcrape [COMMAND] ... [OPTIONS]
   Scrape the SXSW music schedule
@@ -64,6 +68,21 @@ sxcrape batchparse [OPTIONS] [-|(URL|PATH ...)]
   -q --quiet           don't echo URLs|PATHs on stdout
 </pre>
 
+### sxred
+
+<pre>
+% sxred --help
+sxred 2012.8
+
+sxred [OPTIONS] [-|(URL|PATH ...)]
+  Import the SXSW music schedule into Redis
+
+Common flags:
+  -q --quiet    don't echo URLs|PATHs on stdout
+  -? --help     Display help message
+  -V --version  Print version information
+</pre>
+
 ## Per-event JSON representation
 
 The scraper extracts the following information from each music event
@@ -80,39 +99,55 @@ page:
 * A link to one of the artist's music videos.
 * SXSW's recommended Twitter hashtags for the event.
 
-The data are represented as name/value pairs in a JSON object, one
-object per event. Often, one or more values are missing; these are
-represented in the JSON as null values.
+The data are represented as name/value pairs in a JSON object, which
+contains one object for the event, one for the artist, and one for the
+venue. The event object contains the names of the artist and venue for
+the purpose of establishing relationships in a database. Often, one or
+more values are missing; these are represented in the JSON as null
+values.
 
-Here's an example of the JSON output from the `sxcrape` tool for the [March 14, 2012 performance by Paper Diamond](http://schedule.sxsw.com/2012/events/event_MS19763):
+Here's an example of the JSON output from the `sxcrape` tool for the
+[March 14, 2012 performance by Paper
+Diamond](http://schedule.sxsw.com/2012/events/event_MS19763). The
+first element in the list is the event details, the second is the
+artist details, and the third is the venue details:
 
 <pre>
-{
-  "description" : [
-    "PAPER DIAMOND",
-    "Forward is not just a direction, it's a way of life for Colorado based producer Alex B who is rolling out big tunes under the new guise of Paper Diamond. The new project finds the trusted producer moving into previously untraveled musical territory. With a huge debut year under his belt, 2012 is poised to be big from the start.",
-    "The Paper Diamond sound has raw energy and the kind of dramatic anticipation only a seasoned producer can incite. Driving beats and bass grab on tight while deep, rich tones rumble under layers of spacey synthesizers, sweet melodies, and catchy vocals. One thing is for sure. The energy is high.",
-    "In keeping with the way of the future, Paper Diamond’s debut EP \"Levitate\" was made available for free download from PRETTY LIGHTS MUSIC and ELM&OAK RECORDS.",
-    "Download it now at www.paper-diamond.com"
-  ],
-  "start" : "2012-03-15T05:00:00Z",
-  "imgURL" : "http://img.sxsw.com/2012/bands/2675.jpg",
-  "artistURL" : "http://paper-diamond.com/",
-  "videoURL" : null,
-  "day" : "2012-03-14",
-  "address" : "307-A W 5th St",
-  "ages" : "21+",
-  "origin" : "Boulder, CO",
-  "hashTags" : [
-    "#sxsw",
-    "#PaperDiamond"
-  ],
-  "venue" : "The Madison",
-  "end" : "2012-03-15T05:50:00Z",
-  "songURL" : null,
-  "artist" : "Paper Diamond",
-  "genre" : "Electronic"
-}
+[
+  {
+    "end" : "2012-03-15T05:50:00Z",
+    "artist" : "Paper Diamond",
+    "ages" : "21+",
+    "start" : "2012-03-15T05:00:00Z",
+    "venue" : "The Madison",
+    "day" : "2012-03-14",
+    "hashTags" : [
+      "#sxsw",
+      "#PaperDiamond"
+    ],
+    "url" : "http:\/\/schedule.sxsw.com\/2012\/events\/event_MS19763"
+  },
+  {
+    "origin" : "Boulder, CO",
+    "imgURL" : "http:\/\/img.sxsw.com\/2012\/bands\/2675.jpg",
+    "videoURL" : null,
+    "songURL" : null,
+    "description" : [
+      "PAPER DIAMOND",
+      "Forward is not just a direction, it's a way of life for Colorado based producer Alex B who is rolling out big tunes under the new guise of Paper Diamond. The new project finds the trusted producer moving into previously untraveled musical territory. With a huge debut year under his belt, 2012 is poised to be big from the start.",
+      "The Paper Diamond sound has raw energy and the kind of dramatic anticipation only a seasoned producer can incite. Driving beats and bass grab on tight while deep, rich tones rumble under layers of spacey synthesizers, sweet melodies, and catchy vocals. One thing is for sure. The energy is high.",
+      "In keeping with the way of the future, Paper Diamond’s debut EP \"Levitate\" was made available for free download from PRETTY LIGHTS MUSIC and ELM&OAK RECORDS.",
+      "Download it now at www.paper-diamond.com"
+    ],
+    "genre" : "Electronic",
+    "name" : "Paper Diamond",
+    "url" : "http:\/\/paper-diamond.com\/"
+  },
+  {
+    "name" : "The Madison",
+    "address" : "307-A W 5th St"
+  }
+]
 </pre>
 
 ## License

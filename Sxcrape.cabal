@@ -1,10 +1,11 @@
 Name:                Sxcrape
-Version:             2012.7
+Version:             2012.8
 Synopsis:            Scrape the SXSW music showcase schedule.
 Description:         Scrape the SXSW music showcase schedule and:
                      - generate a list of all event URIs.
                      - dump the raw HTML for one or more events.
                      - transform essential event info into JSON.
+                     - import into Redis.
 Homepage:            https://github.com/quixoftic/Sxcrape
 License:             BSD3
 License-file:        LICENSE
