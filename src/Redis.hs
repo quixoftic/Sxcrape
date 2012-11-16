@@ -32,8 +32,8 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Encoding as E
 
--- Import the eventDetails and return the internal event ID.
-importEventDetails :: (Event, Artist, Venue) -> Redis (BS.ByteString)
+-- Import the event details.
+importEventDetails :: (Event, Artist, Venue) -> Redis ()
 importEventDetails (event, artist, venue) =
   let artistName = Artist.name artist
       venueName = Venue.name venue
@@ -44,7 +44,7 @@ importEventDetails (event, artist, venue) =
     saddEvents eventURL
     saddArtists artistName
     saddVenues venueName
-    return eventID
+    return ()
   
 getOrSetEventID :: T.Text -> Redis (BS.ByteString)
 getOrSetEventID nativeEventID = getOrSetID (eventIDKey nativeEventID) nextEventIDKey
