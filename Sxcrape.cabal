@@ -23,16 +23,17 @@ source-repository head
 Executable sxcrape
            Hs-Source-Dirs:      src
            Main-Is:             Sxcrape.hs
-           Build-Depends:       http-conduit >= 1.2.6 && < 1.3,
-                                tagsoup >= 0.12.6 && < 0.13,
+           Build-Depends:       parsec,
+                                http-conduit,
+                                tagsoup,
                                 text,
                                 base >= 4.5.0.0 && < 5,
-                                directory >= 1.1.0.2 && < 1.2,
+                                directory,
                                 bytestring,
-                                aeson >= 0.6.0.0 && < 0.7,
-                                cmdargs >= 0.10 && < 0.11,
-                                regex-tdfa >= 1.1.8 && < 1.2,
-                                regex-tdfa-utf8 >= 1.0 && < 1.1,
+                                aeson,
+                                cmdargs,
+                                regex-tdfa,
+                                regex-tdfa-utf8,
                                 old-locale,
                                 time,
                                 filepath,
@@ -42,9 +43,9 @@ Executable sxcrape
 Executable sxred
            Hs-Source-Dirs:      src
            Main-Is:             Sxred.hs
-           Build-Depends:       hedis == 0.6,
+           Build-Depends:       hedis,
                                 text,
                                 base >= 4.5.0.0 && < 5,
                                 bytestring,
-                                cmdargs >= 0.10 && < 0.11,
+                                cmdargs,
                                 transformers
