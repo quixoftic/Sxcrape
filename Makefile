@@ -1,16 +1,18 @@
+CABAL=~/.cabal/bin/cabal-dev
+
 all: local
 
 local:
-	cabal install --prefix=$(HOME) --user
+	$(CABAL) install --prefix=$(HOME) --user
 
 sdist:
-	cabal sdist
+	$(CABAL) sdist
 
 check:
-	cabal check
+	$(CABAL) check
 
 build:
-	cabal build
+	$(CABAL) build
 
 clean:
-	cabal clean
+	$(CABAL) clean
