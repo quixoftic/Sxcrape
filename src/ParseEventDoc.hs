@@ -42,7 +42,6 @@ parseEventDoc xml = let doc = parseTags xml in
    , A.Artist { A.name = parseArtist doc
               , A.url = parseArtistURL doc
               , A.genre = parseGenre doc
-              , A.description = fromMaybe [] $ parseDescription doc
               , A.origin = parseOrigin doc
               , A.imgURL = parseImgURL doc
               , A.songURL = parseSongURL doc
@@ -76,8 +75,10 @@ parseURL = fromAttrib "data-url" . head . head . sections (~== (TagOpen (s "a") 
 parseOrigin :: XMLDoc -> Maybe T.Text
 parseOrigin = textToMaybe . T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
 
--- Strip formatting characters (e.g., '\t') and blank lines, but
--- preserve overall paragraph structure.
+-- Strip formatting characters (e.g., '\t') and blank lines from
+-- description, but preserve overall paragraph structure.
+--
+-- Note: not currently used, but left here for reference.
 parseDescription :: XMLDoc -> Maybe [T.Text]
 parseDescription = liftM (filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= s "</div>")) . listToMaybe . sections (~== s "<div class=\"block\">") . takeWhile (~/= s "<!-- eo data -->") . dropWhile (~/= s "<div class=\"data clearfix\">")
 

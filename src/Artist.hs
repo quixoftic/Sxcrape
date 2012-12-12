@@ -22,7 +22,6 @@ import Data.Aeson
 data Artist = Artist { name :: T.Text
                      , url :: Maybe T.Text
                      , genre :: Maybe T.Text
-                     , description :: [T.Text]
                      , origin :: Maybe T.Text
                      , imgURL :: T.Text
                      , songURL :: Maybe T.Text
