@@ -38,16 +38,16 @@ fromJSON' bs = Aeson.decode $ BL.fromChunks [bs]
 
 -- Redis keys
 --
-(<:>) :: T.Text -> T.Text -> BS.ByteString
-s1 <:> s2 = toBS $ T.concat [s1, ":", s2]
+(<:>) :: BS.ByteString -> BS.ByteString -> BS.ByteString
+s1 <:> s2 = BS.concat [s1, ":", s2]
 
-toEventKey :: T.Text -> BS.ByteString
+toEventKey :: BS.ByteString -> BS.ByteString
 toEventKey = (<:>) "event"
 
-toArtistKey :: T.Text -> BS.ByteString
+toArtistKey :: BS.ByteString -> BS.ByteString
 toArtistKey = (<:>) "artist"
 
-toVenueKey :: T.Text -> BS.ByteString
+toVenueKey :: BS.ByteString -> BS.ByteString
 toVenueKey = (<:>) "venue"
 
 eventSetKey :: BS.ByteString
@@ -63,16 +63,16 @@ venueSetKey = "venues"
 --
 importEventDetails :: (Event, Artist, Venue) -> Redis ()
 importEventDetails (event, artist, venue) =
-  let artistName = Artist.name artist
-      venueName = Venue.name venue
-      eventURL = Event.url event
+  let artistName = toBS $ Artist.name artist
+      venueName = toBS $ Venue.name venue
+      eventURL = toBS $ Event.url event
   in do
     unsafeSet (toEventKey eventURL) (toJSON' event)
     unsafeSet (toArtistKey artistName) (toJSON' artist)
     unsafeSet (toVenueKey venueName) (toJSON' venue)
-    unsafeSadd eventSetKey (toBS eventURL)
-    unsafeSadd artistSetKey (toBS artistName)
-    unsafeSadd venueSetKey (toBS venueName)
+    unsafeSadd eventSetKey eventURL
+    unsafeSadd artistSetKey artistName
+    unsafeSadd venueSetKey venueName
     return ()
 
 -- Export functions.
@@ -86,10 +86,10 @@ allArtists = allX artistSetKey toArtistKey
 allVenues :: Redis ([Venue])
 allVenues = allX venueSetKey toVenueKey
 
-allX :: Aeson.FromJSON a => BS.ByteString -> (T.Text -> BS.ByteString) -> Redis ([a])
+allX :: Aeson.FromJSON a => BS.ByteString -> (BS.ByteString -> BS.ByteString) -> Redis ([a])
 allX setKey toKeyFn = do
   xs <- unsafeSmembers setKey
-  maybeJSONs <- unsafeMget $ map toKeyFn $ map fromBS xs
+  maybeJSONs <- unsafeMget $ map toKeyFn xs
   return $ catMaybes $ map fromJSON' $ catMaybes maybeJSONs
 
 -- Convenience wrappers around Redis functions.
