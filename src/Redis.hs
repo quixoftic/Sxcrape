@@ -116,14 +116,5 @@ unsafeSmembers key = do
   
 -- Helpers
 --
-valueToInteger :: BS.ByteString -> Integer
-valueToInteger = fst . fromJust . BS.readInteger
-
-integerToValue :: Integer -> BS.ByteString
-integerToValue = BS.pack . show
-
 toBS :: T.Text -> BS.ByteString
 toBS = E.encodeUtf8 . T.toStrict
-
-fromBS :: BS.ByteString -> T.Text
-fromBS = T.fromStrict . E.decodeUtf8
