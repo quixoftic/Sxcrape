@@ -79,9 +79,6 @@ importEventDetails (event, artist, venue) =
 --
 allEvents :: Redis ([Event])
 allEvents = allX eventSetKey toEventKey
---  events <- unsafeSmembers eventSetKey
---  maybeEventsJSON <- unsafeMget $ map toEventKey $ map fromBS events
---  return $ catMaybes $ map fromJSON' $ catMaybes maybeEventsJSON
 
 allArtists :: Redis ([Artist])
 allArtists = allX artistSetKey toArtistKey
