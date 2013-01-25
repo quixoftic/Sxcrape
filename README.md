@@ -1,8 +1,12 @@
 # Sxcrape
 
 Sxcrape is a collection of tools for scraping the SXSW music show
-schedule (known officially as the "Music Showcase"), and presenting it
-as machine-consumable JSON via a simple REST API.
+schedule (known officially as the "Music Showcase").
+
+The original plan for Sxcrape was to present the schedule with a REST
+interface. However, its design goals have been simplified; now,
+effectively parses the music schedule and presents it as a large JSON
+object. The REST functionality may be implemented at a later date.
 
 Currently, it consists of two tools:
 
@@ -10,10 +14,9 @@ Currently, it consists of two tools:
 Schedule website](http://schedule.sxsw.com/) and creates, for each
 event, a file containing the JSON representation of the event details
 -- artist name, venue, showtime, etc.
-* `sxred`, which imports event pages as JSON into a Redis database.
 
-A simple REST service for serving the JSON representation to HTTP
-clients will be forthcoming.
+* `sxred`, which imports event pages as JSON into a Redis database,
+and exports the entire database as one large JSON object
 
 ## Caveats
 
@@ -32,7 +35,7 @@ SXSW music schedule. We intend to do so soon after SXSW makes their
 
 <pre>
 % sxcrape --help
-sxcrape 2012.8
+sxcrape 2012.9
 
 sxcrape [COMMAND] ... [OPTIONS]
   Scrape the SXSW music schedule
@@ -72,15 +75,23 @@ sxcrape batchparse [OPTIONS] [-|(URL|PATH ...)]
 
 <pre>
 % sxred --help
-sxred 2012.8
+sxred 2012.9
 
-sxred [OPTIONS] [-|(URL|PATH ...)]
-  Import the SXSW music schedule into Redis
+sxred [COMMAND] ... [OPTIONS]
+  Redis database for the SXSW music schedule
 
 Common flags:
-  -q --quiet    don't echo URLs|PATHs on stdout
   -? --help     Display help message
   -V --version  Print version information
+
+sxred batchimport [OPTIONS] [-|(URL|PATH ...)]
+  Parse events from one or more URLs given on the command line, or via stdin,
+  and import into Redis.
+
+  -q --quiet    don't echo URLs|PATHs on stdout
+
+sxred batchdump [OPTIONS]
+  Dump entire Redis database into JSON format.
 </pre>
 
 ## Per-event JSON representation
