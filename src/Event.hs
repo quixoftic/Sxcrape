@@ -35,3 +35,5 @@ data Event = Event { url :: T.Text
                    } deriving (Show, Data, Typeable, Generic)
 
 instance ToJSON Event
+
+instance FromJSON Event

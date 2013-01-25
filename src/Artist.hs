@@ -29,3 +29,5 @@ data Artist = Artist { name :: T.Text
                      } deriving (Show, Data, Typeable, Generic)
 
 instance ToJSON Artist
+
+instance FromJSON Artist

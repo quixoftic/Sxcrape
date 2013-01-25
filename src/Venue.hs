@@ -22,3 +22,5 @@ data Venue = Venue { name :: T.Text
                    } deriving (Show, Data, Typeable, Generic)
 
 instance ToJSON Venue
+
+instance FromJSON Venue

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, OverloadedStrings #-}
 --
 -- Module      : Main
 -- Copyright   : Copyright © 2012, Quixoftic, LLC <src@quixoftic.com>
@@ -19,10 +19,13 @@ import System.IO
 import Control.Monad
 import Control.Monad.IO.Class
 import Network.HTTP.Conduit hiding (def)
+import qualified Data.Map as Map
 import Data.Monoid
 import Redis
 import Database.Redis
-import Data.ByteString.Lazy (ByteString)
+import GHC.Generics
+import qualified Data.Aeson as Aeson (encode, ToJSON)
+import qualified Data.ByteString.Lazy as BL (putStr)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
 import qualified Data.Text.Lazy.Encoding as E
@@ -34,6 +37,7 @@ type URL = String
 
 data Sxred = BatchImport { urls :: [URL], 
                            quiet :: Bool }
+           | BatchDump { }
            deriving (Typeable, Data, Eq, Show)
 
 batchImport = record BatchImport { urls = def 
@@ -41,13 +45,17 @@ batchImport = record BatchImport { urls = def
                                                  , quiet := def += help "don't echo URLs|PATHs on stdout"
                                                  ] += help "Parse events from one or more URLs given on the command line, or via stdin, and import into Redis."
 
-mode = cmdArgsMode_ $ modes_ [batchImport] += help "Import the SXSW music schedule into Redis" += program "sxred" += summary ("sxred " ++ showVersion version)
+batchDump = record BatchDump { } [ ] += help "Dump entire Redis database into JSON format."
+
+mode = cmdArgsMode_ $ modes_ [batchImport, batchDump] += help "Redis database for the SXSW music schedule" += program "sxred" += summary ("sxred " ++ showVersion version)
 
 main :: IO ()
 main = cmdArgsRun mode >>= \x -> case x of
   opts@BatchImport {} -> do
     args <- Utility.readMultipleArgs (urls opts)
     runBatchImport args (quiet opts)
+  opts@BatchDump {} -> do
+    runBatchDump
 
 runBatchImport :: [T.Text] -> Bool -> IO ()
 runBatchImport urls quiet = do
@@ -57,3 +65,22 @@ runBatchImport urls quiet = do
 
 eventDetails :: T.Text -> IO (Event, Artist, Venue)
 eventDetails url = Utility.getContents' url >>= return . parseEventDoc
+
+data Db = Db { events :: [Event]
+             , artists :: [Artist]
+             , venues :: [Venue]
+             } deriving (Typeable, Data, Show, Generic)
+
+instance Aeson.ToJSON Db
+
+runBatchDump :: IO ()
+runBatchDump = do
+  conn <- connect defaultConnectInfo
+  runRedis conn $ do
+    events <- allEvents
+    artists <- allArtists
+    venues <- allVenues
+    liftIO $ BL.putStr $ Aeson.encode Db { events = events
+                                         , artists = artists
+                                         , venues = venues
+                                         }
