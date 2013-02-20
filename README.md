@@ -4,9 +4,9 @@ Sxcrape is a collection of tools for scraping the SXSW music show
 schedule (known officially as the "Music Showcase").
 
 The original plan for Sxcrape was to present the schedule with a REST
-interface. However, its design goals have been simplified; now,
-effectively parses the music schedule and presents it as a large JSON
-object. The REST functionality may be implemented at a later date.
+interface. However, its design goals have been simplified; now, it
+parses the music schedule and presents it as a large JSON object. The
+REST functionality may be implemented at a later date.
 
 Currently, it consists of two tools:
 
@@ -20,14 +20,9 @@ and exports the entire database as one large JSON object
 
 ## Caveats
 
-Sxcrape is very year-dependent. The current version is only capable of
-parsing the 2012 music event schedule, and not any earlier years, nor
-any other type of SXSW event. If the differences between the 2011 and
-2012 versions of the [SXSW Schedule
-website](http://schedule.sxsw.com/) are any indication, Sxcrape's
-scraper will certainly need to be rewritten in order to parse the 2013
-SXSW music schedule. We intend to do so soon after SXSW makes their
-2013 schedule available.
+Sxcrape is very year-dependent. This particular version is only
+capable of parsing the 2012 music event schedule, and not any earlier
+or later years, nor any other type of SXSW event.
 
 ## Running
 
@@ -104,7 +99,6 @@ page:
 * Performance date.
 * Scheduled start and end times.
 * The genre/category assigned to the artist by SXSW.
-* A description of the artist, the artist's latest album, etc.
 * An image of the artist.
 * A link to one of the artist's songs.
 * A link to one of the artist's music videos.
@@ -143,13 +137,6 @@ artist details, and the third is the venue details:
     "imgURL" : "http:\/\/img.sxsw.com\/2012\/bands\/2675.jpg",
     "videoURL" : null,
     "songURL" : null,
-    "description" : [
-      "PAPER DIAMOND",
-      "Forward is not just a direction, it's a way of life for Colorado based producer Alex B who is rolling out big tunes under the new guise of Paper Diamond. The new project finds the trusted producer moving into previously untraveled musical territory. With a huge debut year under his belt, 2012 is poised to be big from the start.",
-      "The Paper Diamond sound has raw energy and the kind of dramatic anticipation only a seasoned producer can incite. Driving beats and bass grab on tight while deep, rich tones rumble under layers of spacey synthesizers, sweet melodies, and catchy vocals. One thing is for sure. The energy is high.",
-      "In keeping with the way of the future, Paper Diamond’s debut EP \"Levitate\" was made available for free download from PRETTY LIGHTS MUSIC and ELM&OAK RECORDS.",
-      "Download it now at www.paper-diamond.com"
-    ],
     "genre" : "Electronic",
     "name" : "Paper Diamond",
     "url" : "http:\/\/paper-diamond.com\/"
