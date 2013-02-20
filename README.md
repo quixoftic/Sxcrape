@@ -24,6 +24,9 @@ Sxcrape is very year-dependent. The current version is only capable of
 parsing the 2013 music event schedule, and not any earlier years, nor
 any other type of SXSW event.
 
+The 2012 version of the parser, should you need it, is available
+[here](https://github.com/quixoftic/Sxcrape/archive/2012.final.tar.gz).
+
 ## Running
 
 ### sxcrape
