@@ -21,7 +21,7 @@ import Data.Aeson
 -- Some fields are optional, and are represented either as Maybe a, or as
 -- an empty list.
 --
--- The day of the event (e.g., "2012-03-17") is recorded along with
+-- The day of the event (e.g., "2013-03-17") is recorded along with
 -- the exact start and end times because some events don't have a
 -- start and end time.
 data Event = Event { url :: T.Text

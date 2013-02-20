@@ -33,7 +33,7 @@ import Text.StringLike
 -- Note: only the music festival days!
 data Day = Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday
          deriving (Eq, Ord, Show, Read, Bounded, Enum, Data, Typeable)
-                  
+
 -- Note: don't append the trailing slash!
 baseURL :: String
 baseURL = "http://schedule.sxsw.com"
@@ -47,19 +47,19 @@ eventURLsForDay day = do
   return $ map makeAbsoluteURLFrom $ map (fromAttrib "href") $ filter (~== eventPattern) $ parseTags $ E.decodeUtf8With EncodingError.lenientDecode html
 
 scheduleURLForDay :: Day -> String
-scheduleURLForDay day = baseURL ++ "/2012?conference=music&day=" ++ (show (dayToDate day)) ++ "&category=Showcase#"
+scheduleURLForDay day = baseURL ++ "/?conference=music&day=" ++ (show (dayToDate day)) ++ "&event_type=showcase"
 
 makeAbsoluteURLFrom :: T.Text -> T.Text
 makeAbsoluteURLFrom u = (T.pack baseURL) `T.append` u
 
 eventFromURL :: T.Text -> Maybe T.Text
-eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/2012/events/" -> Just event) = Just event
+eventFromURL (T.stripPrefix $ (T.pack baseURL) `T.append` "/2013/events/" -> Just event) = Just event
 eventFromURL _ = Nothing
 
--- Map day-of-week names to SXSW 2012 March day-of-month numbers,
+-- Map day-of-week names to SXSW 2013 March day-of-month numbers,
 -- which are used by the SXSW schedule web service.
 dayToDate :: Day -> Int
-dayToDate day = 13 + fromEnum day -- Tuesday corresponds to Mar 13
+dayToDate day = 12 + fromEnum day -- Tuesday corresponds to Mar 12
 
 eventPattern :: String
 eventPattern = "<a class=\"more_details\">"

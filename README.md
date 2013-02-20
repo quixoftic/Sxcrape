@@ -20,9 +20,9 @@ and exports the entire database as one large JSON object
 
 ## Caveats
 
-Sxcrape is very year-dependent. This particular version is only
-capable of parsing the 2012 music event schedule, and not any earlier
-or later years, nor any other type of SXSW event.
+Sxcrape is very year-dependent. The current version is only capable of
+parsing the 2013 music event schedule, and not any earlier years, nor
+any other type of SXSW event.
 
 ## Running
 
@@ -30,7 +30,7 @@ or later years, nor any other type of SXSW event.
 
 <pre>
 % sxcrape --help
-sxcrape 2012.9
+sxcrape 2013.1
 
 sxcrape [COMMAND] ... [OPTIONS]
   Scrape the SXSW music schedule
@@ -70,7 +70,7 @@ sxcrape batchparse [OPTIONS] [-|(URL|PATH ...)]
 
 <pre>
 % sxred --help
-sxred 2012.9
+sxred 2013.1
 
 sxred [COMMAND] ... [OPTIONS]
   Redis database for the SXSW music schedule
@@ -102,7 +102,7 @@ page:
 * An image of the artist.
 * A link to one of the artist's songs.
 * A link to one of the artist's music videos.
-* SXSW's recommended Twitter hashtags for the event.
+* SXSW's recommended Twitter hashtags for the event. (**Note**: as of 2013-02-19, Twitter is not providing hashtags for SXSW 2013 music showcase events.)
 
 The data are represented as name/value pairs in a JSON object, which
 contains one object for the event, one for the artist, and one for the
@@ -112,38 +112,34 @@ more values are missing; these are represented in the JSON as null
 values.
 
 Here's an example of the JSON output from the `sxcrape` tool for the
-[March 14, 2012 performance by Paper
-Diamond](http://schedule.sxsw.com/2012/events/event_MS19763). The
+[March 15, 2013 performance by Bloody Knives](http://schedule.sxsw.com/2013/events/event_MS21858). The
 first element in the list is the event details, the second is the
 artist details, and the third is the venue details:
 
 <pre>
 [
   {
-    "end" : "2012-03-15T05:50:00Z",
-    "artist" : "Paper Diamond",
+    "end" : "2013-03-16T01:40:00Z",
+    "day" : "2013-03-15",
     "ages" : "21+",
-    "start" : "2012-03-15T05:00:00Z",
-    "venue" : "The Madison",
-    "day" : "2012-03-14",
-    "hashTags" : [
-      "#sxsw",
-      "#PaperDiamond"
-    ],
-    "url" : "http:\/\/schedule.sxsw.com\/2012\/events\/event_MS19763"
+    "venue" : "Brass House",
+    "artist" : "Bloody Knives",
+    "hashTags" : [],
+    "url" : "http://schedule.sxsw.com/2013/events/event_MS21858",
+    "start" : "2013-03-16T01:00:00Z"
   },
   {
-    "origin" : "Boulder, CO",
-    "imgURL" : "http:\/\/img.sxsw.com\/2012\/bands\/2675.jpg",
-    "videoURL" : null,
-    "songURL" : null,
-    "genre" : "Electronic",
-    "name" : "Paper Diamond",
-    "url" : "http:\/\/paper-diamond.com\/"
+    "origin" : "Austin, TX",
+    "songURL" : "http://audio.sxsw.com/2013/mp3_by_artist_id/61610.mp3",
+    "genre" : "Rock",
+    "name" : "Bloody Knives",
+    "url" : "http://saintmarierecords.com",
+    "imgURL" : "http://img.sxsw.com/2013/bands/61610.jpg",
+    "videoURL" : "http://player.vimeo.com/video/59938622"
   },
   {
-    "name" : "The Madison",
-    "address" : "307-A W 5th St"
+    "address" : "115 San Jacinto St",
+    "name" : "Brass House"
   }
 ]
 </pre>

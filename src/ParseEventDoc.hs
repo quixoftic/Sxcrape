@@ -83,7 +83,7 @@ parseDescription :: XMLDoc -> Maybe [T.Text]
 parseDescription = liftM (filter (/= "") . map (T.unwords . T.words) . T.lines . innerText . takeWhile (~/= s "</div>")) . listToMaybe . sections (~== s "<div class=\"block\">") . takeWhile (~/= s "<!-- eo data -->") . dropWhile (~/= s "<div class=\"data clearfix\">")
 
 parseVenue :: XMLDoc -> T.Text
-parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=detail_venue>")
+parseVenue = scrubTagText . (!! 1) . dropWhile (~/= s "<h4 class=detail_venue>")
 
 parseAges :: XMLDoc -> Maybe T.Text
 parseAges = liftM (T.strip . fromJust . (T.stripPrefix "Age Policy:")) . listToMaybe . filter (T.isPrefixOf "Age Policy:") . map fromTagText . filter isTagText
@@ -102,7 +102,7 @@ parseSongURL :: XMLDoc -> Maybe T.Text
 parseSongURL = liftM (T.takeWhile (/= '&') . fromJust . T.stripPrefix "file=" . fromAttrib "value" . head) . listToMaybe . sections (~== s "<param name=\"flashvars\">")
 
 parseVideoURL :: XMLDoc -> Maybe T.Text
-parseVideoURL = liftM (fromAttrib "src") . listToMaybe . filter (~== s "<embed>")
+parseVideoURL = liftM (fromAttrib "src" . head . dropWhile (~/= s "<iframe>")) . listToMaybe . sections (~== (TagText (s "Music Video")))
   
 parseArtistURL :: XMLDoc -> Maybe T.Text
 parseArtistURL = liftM (fromAttrib "href" . head . dropWhile (~/= s "<a>")) . listToMaybe . sections (~== (TagText (s "Online")))
@@ -119,16 +119,16 @@ parseGenre :: XMLDoc -> Maybe T.Text
 parseGenre = textToMaybe . scrubTagText . head  . filter isTagText . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
 
 parseArtist :: XMLDoc -> T.Text
-parseArtist = scrubTagText . (!! 1) . dropWhile (~/= s "<title>")
+parseArtist = scrubTagText . (!! 2) . dropWhile (~/= s "<div class=data>")
 
 parseAddress :: XMLDoc -> T.Text
-parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h2 class=address>")
+parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h4 class=address>")
 
 -- Note: the day given in the event info is technically one day
 -- earlier than the actual day, for events whose start time occurs
 -- after midnight CDT.
 parseDay :: XMLDoc -> T.Text
-parseDay doc = T.pack $ showGregorian $ fromJust $ toDay $ T.intercalate " " [parseDateStr doc, "2012"]
+parseDay doc = T.pack $ showGregorian $ fromJust $ toDay $ T.intercalate " " [parseDateStr doc, "2013"]
   where
     toDay = parseTime defaultTimeLocale "%A, %B %d %Y" . T.unpack :: T.Text -> Maybe Day
 
@@ -144,14 +144,14 @@ parseEndTime xml = let cdtTime = parseEndTimeStr xml
                        cdtDate = parseDateStr xml in
                    fixUpDateAndTime cdtDate cdtTime
 
--- All SXSW 2012 events happen in 2012 in the CDT timezone. Local
+-- All SXSW 2013 events happen in 2013 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 fixUpDateAndTime :: T.Text -> T.Text -> Maybe UTCTime
 fixUpDateAndTime cdtDate cdtTime = do
   cdtTimeOfDay <- toTimeOfDay $ cdtTime
-  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ T.intercalate " " [cdtDate, "2012", cdtTime, "CDT"]
+  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ T.intercalate " " [cdtDate, "2013", cdtTime, "CDT"]
   return utct
   where
     offset tod
@@ -162,7 +162,7 @@ fixUpDateAndTime cdtDate cdtTime = do
     toTimeOfDay = parseTime defaultTimeLocale "%l:%M%p" . T.unpack :: T.Text -> Maybe TimeOfDay
 
 dateAndTimeText :: XMLDoc -> (T.Text, T.Text)
-dateAndTimeText = (\(date:time:_) -> (date, time)) . map scrubTagText . take 2 . filter isTagText . head . sections (~== s "<h3 id=\"detail_time\">")
+dateAndTimeText = (\(_:date:time:_) -> (date, time)) . map scrubTagText . take 3 . filter isTagText . head . sections (~== s "<h3 id=\"detail_time\">")
 
 parseDateStr :: XMLDoc -> T.Text
 parseDateStr = fst . dateAndTimeText
