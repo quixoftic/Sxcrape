@@ -73,7 +73,7 @@ parseURL = fromAttrib "data-url" . head . head . sections (~== (TagOpen (s "a") 
 -- formatting characters. Origin may also be the empty string, so wrap
 -- it in a Maybe.
 parseOrigin :: XMLDoc -> Maybe T.Text
-parseOrigin = textToMaybe . T.intercalate ", " . cleanLines . fromTagText . (!! 2) . head . sections (~== (TagText (s "From"))) . filter isTagText
+parseOrigin = liftM (T.intercalate ", " . cleanLines . fromTagText . (!! 2)) . listToMaybe . sections (~== (TagText (s "From"))) . filter isTagText
 
 -- Strip formatting characters (e.g., '\t') and blank lines from
 -- description, but preserve overall paragraph structure.
