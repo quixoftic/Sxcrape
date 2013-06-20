@@ -1,4 +1,4 @@
-CABAL=~/.cabal/bin/cabal-dev
+CABAL=~/Library/Haskell/bin/cabal-dev
 
 all: local
 
