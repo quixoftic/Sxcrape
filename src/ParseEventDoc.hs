@@ -128,7 +128,7 @@ parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h4 class=address>")
 -- earlier than the actual day, for events whose start time occurs
 -- after midnight CDT.
 parseDay :: XMLDoc -> T.Text
-parseDay doc = T.pack $ showGregorian $ fromJust $ toDay $ T.intercalate " " [parseDateStr doc, "2013"]
+parseDay doc = T.pack $ showGregorian $ fromJust $ toDay $ T.intercalate " " [parseDateStr doc, "2014"]
   where
     toDay = parseTime defaultTimeLocale "%A, %B %d %Y" . T.unpack :: T.Text -> Maybe Day
 
@@ -144,14 +144,14 @@ parseEndTime xml = let cdtTime = parseEndTimeStr xml
                        cdtDate = parseDateStr xml in
                    fixUpDateAndTime cdtDate cdtTime
 
--- All SXSW 2013 events happen in 2013 in the CDT timezone. Local
+-- All SXSW 2014 events happen in 2014 in the CDT timezone. Local
 -- times given after 11:59 p.m., but before, let's say, 6 a.m.,
 -- technically occur on the next day; e.g., if the SXSW schedule says
 -- "March 16 1:00AM," it means "March 17 1:00AM CDT."
 fixUpDateAndTime :: T.Text -> T.Text -> Maybe UTCTime
 fixUpDateAndTime cdtDate cdtTime = do
   cdtTimeOfDay <- toTimeOfDay $ cdtTime
-  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ T.intercalate " " [cdtDate, "2013", cdtTime, "CDT"]
+  utct <- fmap (addUTCTime $ offset cdtTimeOfDay) $ toUTCTime $ T.intercalate " " [cdtDate, "2014", cdtTime, "CDT"]
   return utct
   where
     offset tod
@@ -162,7 +162,7 @@ fixUpDateAndTime cdtDate cdtTime = do
     toTimeOfDay = parseTime defaultTimeLocale "%l:%M%p" . T.unpack :: T.Text -> Maybe TimeOfDay
 
 dateAndTimeText :: XMLDoc -> (T.Text, T.Text)
-dateAndTimeText = (\(_:date:time:_) -> (date, time)) . map scrubTagText . take 3 . filter isTagText . head . sections (~== s "<h3 id=\"detail_time\">")
+dateAndTimeText = (\(_:_:date:time:_) -> (date, time)) . map scrubTagText . take 4 . filter isTagText . head . sections (~== s "<h3 id=\"detail_time\">")
 
 parseDateStr :: XMLDoc -> T.Text
 parseDateStr = fst . dateAndTimeText
