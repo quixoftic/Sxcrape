@@ -11,7 +11,7 @@ License:             BSD3
 License-file:        LICENSE
 Author:              Drew Hess <dhess-src@quixoftic.com>
 Maintainer:          Drew Hess <dhess-src@quixoftic.com>
-Copyright:           Copyright © 2013, Quixoftic, LLC <src@quixoftic.com>
+Copyright:           Copyright © 2014, Quixoftic, LLC <src@quixoftic.com>
 Category:            Web
 Build-type:          Simple
 Cabal-version:       >=1.6

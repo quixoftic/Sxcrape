@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable, ViewPatterns, OverloadedStrings #-}
 --
 -- Module      : EventURLs
--- Copyright   : Copyright © 2013, Quixoftic, LLC <src@quixoftic.com>
+-- Copyright   : Copyright © 2014, Quixoftic, LLC <src@quixoftic.com>
 -- License     : BSD3 (see LICENSE file)
 -- Maintainer  : dhess-src@quixoftic.com
 -- Stability   : experimental
