@@ -23,7 +23,7 @@ data Artist = Artist { name :: T.Text
                      , url :: Maybe T.Text
                      , genre :: Maybe T.Text
                      , origin :: Maybe T.Text
-                     , imgURL :: T.Text
+                     , imgURL :: Maybe T.Text
                      , songURL :: Maybe T.Text
                      , videoURL :: Maybe T.Text
                      } deriving (Show, Data, Typeable, Generic)

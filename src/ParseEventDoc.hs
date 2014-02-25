@@ -91,8 +91,8 @@ parseAges = liftM (T.strip . fromJust . (T.stripPrefix "Age Policy:")) . listToM
 -- Some artist image URLs, specifically the placeholder "Showcasing
 -- Artist" one, are relative to http://schedule.sxsw.com/. Fix those
 -- up.
-parseImgURL :: XMLDoc -> T.Text
-parseImgURL = makeAbsolute . fromAttrib "src" . (!! 0) . dropWhile (~/= s "<img>") . dropWhile (~/= s "<div class=video_embed>")
+parseImgURL :: XMLDoc -> Maybe T.Text
+parseImgURL = liftM (makeAbsolute . fromAttrib "src") . listToMaybe . dropWhile (~/= s "<img>") . takeWhile (~/= s "</div>") . dropWhile (~/= s "<div class=video_embed>")
   where
     makeAbsolute url
       | URI.isRelativeReference (T.unpack url) = T.concat ["http://schedule.sxsw.com", url]
