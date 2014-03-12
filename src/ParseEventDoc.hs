@@ -114,9 +114,13 @@ parseHashTags = liftM (T.splitOn " " . scrubTagText) . maybeHashTags . filter is
     maybeHashTags (_:x:_) = Just x
     maybeHashTags _       = Nothing
 
--- Genre may be the empty string, so wrap it in a Maybe.
+-- Genre may be the empty string (or altogether missing), so wrap it in a Maybe.
 parseGenre :: XMLDoc -> Maybe T.Text
-parseGenre = textToMaybe . scrubTagText . head  . filter isTagText . dropWhile (~/= s "<a>") . head . sections (~== (TagText (s "Genre")))
+parseGenre = maybeGenre . sections (~== (TagText (s "Genre")))
+  where
+    maybeGenre :: [XMLDoc] -> Maybe T.Text
+    maybeGenre (x:xs) = textToMaybe $ scrubTagText $ head $ filter isTagText $ dropWhile (~/= s "<a>") x
+    maybeGenre [] = Nothing
 
 parseArtist :: XMLDoc -> T.Text
 parseArtist = scrubTagText . (!! 2) . dropWhile (~/= s "<div class=data>")
