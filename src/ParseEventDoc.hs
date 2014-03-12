@@ -121,8 +121,13 @@ parseGenre = textToMaybe . scrubTagText . head  . filter isTagText . dropWhile (
 parseArtist :: XMLDoc -> T.Text
 parseArtist = scrubTagText . (!! 2) . dropWhile (~/= s "<div class=data>")
 
-parseAddress :: XMLDoc -> T.Text
-parseAddress = scrubTagText . (!! 1) . dropWhile (~/= s "<h4 class=address>")
+-- As of 2014 schedule, some venues may not have an address.
+parseAddress :: XMLDoc -> Maybe T.Text
+parseAddress = maybeAddress . dropWhile (~/= s "<h4 class=address>")
+  where
+    maybeAddress :: [Tag T.Text] -> Maybe T.Text
+    maybeAddress (_:x:_) = Just $ scrubTagText x
+    maybeAddress _       = Nothing
 
 -- Note: the day given in the event info is technically one day
 -- earlier than the actual day, for events whose start time occurs
