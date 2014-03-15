@@ -21,11 +21,14 @@ and exports the entire database as one large JSON object
 ## Caveats
 
 Sxcrape is very year-dependent. The current version is only capable of
-parsing the 2013 music event schedule, and not any earlier years, nor
+parsing the 2014 music event schedule, and not any earlier years, nor
 any other type of SXSW event.
 
-The 2012 version of the parser, should you need it, is available
-[here](https://github.com/quixoftic/Sxcrape/archive/2012.final.tar.gz).
+Earlier versions of the parser, should you need them, are available:
+
+* [2012](https://github.com/quixoftic/Sxcrape/archive/2012.final.tar.gz)
+
+* [2013](https://github.com/quixoftic/Sxcrape/archive/2013.final.tar.gz)
 
 ## Running
 
@@ -33,7 +36,7 @@ The 2012 version of the parser, should you need it, is available
 
 <pre>
 % sxcrape --help
-sxcrape 2013.1
+sxcrape 2014.0
 
 sxcrape [COMMAND] ... [OPTIONS]
   Scrape the SXSW music schedule
@@ -73,7 +76,7 @@ sxcrape batchparse [OPTIONS] [-|(URL|PATH ...)]
 
 <pre>
 % sxred --help
-sxred 2013.1
+sxred 2014.0
 
 sxred [COMMAND] ... [OPTIONS]
   Redis database for the SXSW music schedule
@@ -105,7 +108,8 @@ page:
 * An image of the artist.
 * A link to one of the artist's songs.
 * A link to one of the artist's music videos.
-* SXSW's recommended Twitter hashtags for the event. (**Note**: as of 2013-02-19, Twitter is not providing hashtags for SXSW 2013 music showcase events.)
+* SXSW's recommended Twitter hashtags for the event. (**Note**: as of
+  2013, SXSW is no longer providing hashtags for music showcase events.)
 
 The data are represented as name/value pairs in a JSON object, which
 contains one object for the event, one for the artist, and one for the
@@ -115,37 +119,41 @@ more values are missing; these are represented in the JSON as null
 values.
 
 Here's an example of the JSON output from the `sxcrape` tool for the
-[March 15, 2013 performance by Bloody Knives](http://schedule.sxsw.com/2013/events/event_MS21858). The
-first element in the list is the event details, the second is the
+[March 15, 2014 performance by Gary Numan](http://schedule.sxsw.com/2014/events/event_MS26696).
+The first element in the list is the event details, the second is the
 artist details, and the third is the venue details:
 
 <pre>
 [
-  {
-    "end" : "2013-03-16T01:40:00Z",
-    "day" : "2013-03-15",
-    "ages" : "21+",
-    "venue" : "Brass House",
-    "artist" : "Bloody Knives",
-    "hashTags" : [],
-    "url" : "http://schedule.sxsw.com/2013/events/event_MS21858",
-    "start" : "2013-03-16T01:00:00Z"
-  },
-  {
-    "origin" : "Austin, TX",
-    "songURL" : "http://audio.sxsw.com/2013/mp3_by_artist_id/61610.mp3",
-    "genre" : "Rock",
-    "name" : "Bloody Knives",
-    "url" : "http://saintmarierecords.com",
-    "imgURL" : "http://img.sxsw.com/2013/bands/61610.jpg",
-    "videoURL" : "http://player.vimeo.com/video/59938622"
-  },
-  {
-    "address" : "115 San Jacinto St",
-    "name" : "Brass House"
-  }
+   {
+      "end":"2014-03-16T06:50:00Z",
+      "day":"2014-03-15",
+      "ages":"21+",
+      "venue":"Elysium",
+      "artist":"Gary Numan",
+      "hashTags":[],
+      "url":"http://schedule.sxsw.com/2014/events/event_MS26696",
+      "start":"2014-03-16T05:30:00Z"
+   },
+   {
+      "origin":"Los Angeles, CA",
+      "songURL":"http://audio.sxsw.com/2014/mp3_by_artist_id/6204.mp3",
+      "genre":"Rock",
+      "name":"Gary Numan",
+      "url":"http://garynuman.com",
+      "imgURL":"http://img.sxsw.com/2014/bands/6204.jpg",
+      "videoURL":null
+   },
+   {
+      "address":"705 Red River St",
+      "name":"Elysium"
+   }
 ]
 </pre>
+
+## Known issues
+
+The 2014.0 version of the parser doesn't parse video links correctly.
 
 ## License
 
